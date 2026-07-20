@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="UNTREF — Laboratorio electrostático de regiones concéntricas" />
+    <title>UNTREF — Laboratorio electrostático</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='white'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial, sans-serif' font-size='34' font-weight='800' fill='%23000000'%3EU%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="UNTREF inicio">
+          <span>UNTREF</span>
+        </a>
+        <div class="topbar-center">
+          <span class="eyebrow">LABORATORIO /</span>
+          <span id="experimentTitle">CONFIGURACIÓN CONCÉNTRICA</span>
+        </div>
+        <div class="status-pill"><span></span> Cálculo local</div>
+      </header>
+
+      <main class="workspace">
+        <aside class="panel regions-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">ESTRUCTURA</span>
+              <h1>Regiones</h1>
+            </div>
+            <button class="icon-button" id="addRegionButton" title="Agregar región">＋</button>
+          </div>
+
+          <div class="geometry-toggle" role="group" aria-label="Geometría">
+            <button class="active" data-geometry="sphere"><span class="shape-icon sphere"></span> Esfera</button>
+            <button data-geometry="cylinder"><span class="shape-icon cylinder"></span> Cilindro</button>
+          </div>
+
+          <div class="structure-summary">
+            <span id="regionCount">3 regiones</span>
+            <span id="outerSize">R = 3,00 m</span>
+          </div>
+          <div id="regionList" class="region-list"></div>
+
+          <button class="add-region-wide" id="addRegionWide">
+            <span>＋</span>
+            <span><strong>Nueva región</strong><small>Máximo 10 regiones</small></span>
+          </button>
+        </aside>
+
+        <section class="canvas-panel">
+          <div class="canvas-toolbar">
+            <div class="segmented">
+              <button class="active" data-view="field">Campo</button>
+              <button data-view="model">3D</button>
+            </div>
+            <div class="canvas-actions">
+              <label class="zoom-control" for="graphZoom">
+                <span>Zoom</span>
+                <input id="graphZoom" type="range" min="0.35" max="30" step="0.05" value="1" />
+                <b id="graphZoomValue">1,0×</b>
+              </label>
+              <button id="toggleMotion" class="tool-button active">Movimiento</button>
+              <button id="toggleLabels" class="tool-button active">Dimensiones</button>
+              <button id="resetView" class="tool-button" title="Restablecer vista">↺</button>
+            </div>
+          </div>
+
+          <div class="visualization-wrap">
+            <svg id="visualization" viewBox="0 0 720 650" role="img" aria-label="Vista de corte de las regiones"></svg>
+            <canvas id="visualization3d" aria-label="Vista tridimensional de la configuración"></canvas>
+            <div class="axis-label axis-x">x</div>
+            <div class="axis-label axis-y">y</div>
+            <div class="scale-note" id="scaleNote">escala · 1 m</div>
+            <div class="point-card" id="pointCard">
+              <span class="point-dot"></span>
+              <div><small>PUNTO P</small><strong id="pointCardCoords">(4,00; 1,00; 0,00) m</strong></div>
+            </div>
+          </div>
+
+          <div class="legend" id="legend"></div>
+        </section>
+
+        <aside class="panel properties-panel">
+          <div class="panel-heading compact">
+            <div><span class="eyebrow">PROPIEDADES</span><h2 id="editorTitle">Núcleo</h2></div>
+            <button class="icon-button danger" id="deleteRegion" title="Eliminar región">⌫</button>
+          </div>
+
+          <form id="regionForm" autocomplete="off">
+            <label class="field-label" for="regionName">Nombre</label>
+            <input class="text-input" id="regionName" maxlength="28" />
+
+            <div class="field-group">
+              <span class="field-label">Límites <em>metros</em></span>
+              <div class="paired-inputs">
+                <label><span id="innerLabel">Radio interior</span><div><input id="innerSize" type="number" min="0" step="0.1" /><b>m</b></div></label>
+                <label><span id="outerLabel">Radio exterior</span><div><input id="outerSizeInput" type="number" min="0.01" step="0.1" /><b>m</b></div></label>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <span class="field-label">Tipo de región</span>
+              <div class="type-grid">
+                <button type="button" data-material="insulator"><span>⊙</span>Aislante</button>
+                <button type="button" data-material="conductor"><span>◍</span>Conductor</button>
+                <button type="button" data-material="vacuum"><span>○</span>Vacío</button>
+              </div>
+            </div>
+
+            <div class="charge-section">
+              <div class="charge-tabs">
+                <button type="button" class="active" data-charge-mode="total">Carga total</button>
+                <button type="button" data-charge-mode="density">Densidad</button>
+              </div>
+              <label class="field-label profile-label" for="densityProfile">Perfil radial</label>
+              <select class="profile-select" id="densityProfile" aria-label="Perfil radial de densidad">
+                <option value="constant">Constante</option>
+                <option value="linear">rho = A r</option>
+                <option value="inverse">rho = B / r</option>
+              </select>
+              <label class="charge-input">
+                <input id="chargeValue" type="number" step="any" />
+                <select id="chargeUnit" aria-label="Unidad de carga"></select>
+              </label>
+              <div class="calculated-row"><span id="calculatedLabel">Densidad calculada</span><strong id="calculatedValue">—</strong></div>
+              <div class="polarity-bar"><span>−</span><div><i id="polarityIndicator"></i></div><span>＋</span></div>
+            </div>
+
+            <div class="validation-message" id="validationMessage"></div>
+          </form>
+        </aside>
+      </main>
+
+      <section class="results-drawer">
+        <div class="results-summary">
+          <div class="result-heading"><span class="eyebrow">RESULTADO EN RADIO</span><span id="pointLocation">Fuera de la configuración</span></div>
+          <div class="magnitude"><span>|E(r)|</span><strong id="magnitude">0,000</strong><small>N/C</small></div>
+          <div class="vector-value"><span>CAMPO RADIAL</span><code id="radialField">0,000 N/C</code></div>
+          <div class="direction-value"><span>SENTIDO</span><strong id="fieldSense">—</strong></div>
+        </div>
+        <div class="test-point">
+          <div><span class="eyebrow">RADIO DE CÁLCULO</span><small>Distancia al centro o eje en metros</small></div>
+          <label>r <input id="radiusInput" type="number" value="4" min="0" step="0.01" /></label>
+        </div>
+        <div class="contributions">
+          <button id="toggleContributions"><span>APORTES POR REGIÓN</span><b>⌃</b></button>
+          <div id="contributionTableWrap">
+            <table><thead><tr><th>Región</th><th>E_r N/C</th><th>|E| N/C</th><th>Aporte</th></tr></thead><tbody id="contributionBody"></tbody></table>
+          </div>
+        </div>
+        <section class="formula-panel" aria-label="Fórmulas utilizadas">
+          <div class="formula-title"><span class="eyebrow">FÓRMULAS UTILIZADAS</span><small>Referencia del apéndice y extensiones del simulador</small></div>
+          <div class="formula-grid">
+            <article>
+              <h3>Base</h3>
+              <p><code>k = 1 / (4π ε₀) = 8.9875517923 × 10⁹ N·m²/C²</code></p>
+              <p><code>E⃗ total(P) = Σ E⃗ᵢ(P)</code></p>
+            </article>
+            <article>
+              <h3>Esfera sólida</h3>
+              <p><code>E_r = kQ/r²</code> para <code>r ≥ R</code></p>
+              <p><code>E_r = kQr/R³</code> para <code>r ≤ R</code></p>
+            </article>
+            <article>
+              <h3>Corteza esférica</h3>
+              <p><code>E_r = kQ/r²</code> para <code>r &gt; R</code></p>
+              <p><code>E_r = 0</code> para <code>r &lt; R</code></p>
+            </article>
+            <article>
+              <h3>Cilindro sólido</h3>
+              <p><code>E_r = ρR²/(2ε₀r) = λ/(2π ε₀ r)</code> para <code>r ≥ R</code></p>
+              <p><code>E_r = ρr/(2ε₀) = λr/(2π ε₀R²)</code> para <code>r ≤ R</code></p>
+            </article>
+            <article>
+              <h3>Corteza cilíndrica</h3>
+              <p><code>E_r = 0</code> para <code>r &lt; R</code></p>
+              <p><code>E_r = σR/(ε₀r) = λ/(2π ε₀ r)</code> para <code>r &gt; R</code></p>
+            </article>
+            <article>
+              <h3>Extensiones</h3>
+              <p><code>ρ(r)=A r ⇒ Q_enc = πA(b⁴-a⁴)</code></p>
+              <p><code>ρ(r)=B/r ⇒ Q_enc = 2πB(b²-a²)</code></p>
+              <p><code>dq = ρ ΔV</code>, <code>E⃗ ≈ Σ k dq Δr⃗/|Δr⃗|³</code> para cubo.</p>
+            </article>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <span class="modal-icon" id="modalIcon">!</span>
+        <h3 id="modalTitle">Confirmar acción</h3>
+        <p id="modalText"></p>
+        <div class="modal-actions"><button id="modalCancel">Cancelar</button><button id="modalConfirm">Confirmar</button></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script type="importmap">
+      { "imports": { "three": "https://unpkg.com/three@0.165.0/build/three.module.js" } }
+    </script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
