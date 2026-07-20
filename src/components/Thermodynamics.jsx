@@ -21,8 +21,21 @@ const CALCULATORS = [
     id: 'thermal-equilibrium',
     title: 'Equilibrio térmico',
     description: 'ΣQ = 0'
+  },
+  {
+    id: 'heating-curve',
+    title: 'Curva de calentamiento',
+    description: 'ΣQ por etapas'
   }
 ];
+
+const PHASES = {
+  solid: { label: 'Sólido', specificHeat: 'solidSpecificHeat' },
+  liquid: { label: 'Líquido', specificHeat: 'liquidSpecificHeat' },
+  gas: { label: 'Gaseoso', specificHeat: 'gasSpecificHeat' }
+};
+
+const PHASE_ORDER = ['solid', 'liquid', 'gas'];
 
 function formatEnergy(value) {
   if (!Number.isFinite(value)) return '—';
@@ -45,10 +58,25 @@ export default function Thermodynamics() {
     { id: 'substance-1', name: 'Sustancia 1', mass: 1, specificHeat: 4186, temperature: 80 },
     { id: 'substance-2', name: 'Sustancia 2', mass: 1, specificHeat: 4186, temperature: 20 }
   ]);
+  const [heatingCurve, setHeatingCurve] = useState({
+    mass: 1,
+    initialPhase: 'solid',
+    finalPhase: 'gas',
+    initialTemperature: -10,
+    finalTemperature: 110,
+    meltingPoint: 0,
+    boilingPoint: 100,
+    solidSpecificHeat: 2100,
+    liquidSpecificHeat: 4186,
+    gasSpecificHeat: 2010,
+    fusionLatentHeat: 334000,
+    vaporizationLatentHeat: 2256000
+  });
   const results = useMemo(() => convertTemperature(temperature, sourceScale), [temperature, sourceScale]);
   const sensibleHeat = useMemo(() => Number(mass) * Number(specificHeat) * Number(deltaTemperature), [mass, specificHeat, deltaTemperature]);
   const latentHeatTotal = useMemo(() => Number(latentMass) * Number(latentHeat), [latentMass, latentHeat]);
   const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
+  const heatingCurveResult = useMemo(() => calculateHeatingCurve(heatingCurve), [heatingCurve]);
 
   return (
     <>
@@ -97,11 +125,17 @@ export default function Thermodynamics() {
               onMass={setLatentMass}
               onLatentHeat={setLatentHeat}
             />
-          ) : (
+          ) : calculator === 'thermal-equilibrium' ? (
             <ThermalEquilibriumCalculator
               substances={mixture}
               equilibrium={equilibrium}
               onSubstances={setMixture}
+            />
+          ) : (
+            <HeatingCurveCalculator
+              values={heatingCurve}
+              result={heatingCurveResult}
+              onValues={setHeatingCurve}
             />
           )}
         </section>
@@ -114,7 +148,9 @@ export default function Thermodynamics() {
             ? <SensibleHeatFormulas />
             : calculator === 'latent-heat'
               ? <LatentHeatFormulas />
-              : <ThermalEquilibriumFormulas />}
+              : calculator === 'thermal-equilibrium'
+                ? <ThermalEquilibriumFormulas />
+                : <HeatingCurveFormulas />}
       </section>
     </>
   );
@@ -329,6 +365,246 @@ function ThermalEquilibriumCalculator({ substances, equilibrium, onSubstances })
   );
 }
 
+export function calculateHeatingCurve(values) {
+  const m = Number(values.mass);
+  const ti = Number(values.initialTemperature);
+  const tf = Number(values.finalTemperature);
+  const tm = Number(values.meltingPoint);
+  const tb = Number(values.boilingPoint);
+  const cs = Number(values.solidSpecificHeat);
+  const cl = Number(values.liquidSpecificHeat);
+  const cg = Number(values.gasSpecificHeat);
+  const lf = Number(values.fusionLatentHeat);
+  const lv = Number(values.vaporizationLatentHeat);
+  const initialPhaseIndex = PHASE_ORDER.indexOf(values.initialPhase);
+  const finalPhaseIndex = PHASE_ORDER.indexOf(values.finalPhase);
+  const stages = [];
+
+  if (![m, ti, tf, tm, tb, cs, cl, cg, lf, lv].every(Number.isFinite)) {
+    return { stages: [], total: NaN, error: 'Completá todos los campos con valores numéricos.' };
+  }
+  if (initialPhaseIndex < 0 || finalPhaseIndex < 0) {
+    return { stages: [], total: NaN, error: 'Seleccioná estados inicial y final válidos.' };
+  }
+  if (m <= 0 || [cs, cl, cg, lf, lv].some(value => value < 0)) {
+    return { stages: [], total: NaN, error: 'La masa debe ser positiva y las propiedades térmicas no pueden ser negativas.' };
+  }
+  if (tb <= tm) {
+    return { stages: [], total: NaN, error: 'El punto de ebullición debe ser mayor que el punto de fusión.' };
+  }
+
+  const phaseTemperatureIsValid = (phase, temperature) => (
+    phase === 'solid' ? temperature <= tm : phase === 'liquid' ? temperature >= tm && temperature <= tb : temperature >= tb
+  );
+  if (!phaseTemperatureIsValid(values.initialPhase, ti)) {
+    return { stages: [], total: NaN, error: `La temperatura inicial no corresponde al estado ${PHASES[values.initialPhase].label.toLowerCase()}.` };
+  }
+  if (!phaseTemperatureIsValid(values.finalPhase, tf)) {
+    return { stages: [], total: NaN, error: `La temperatura final no corresponde al estado ${PHASES[values.finalPhase].label.toLowerCase()}.` };
+  }
+  if (initialPhaseIndex === finalPhaseIndex && ti === tf) {
+    return { stages: [], total: 0, error: null };
+  }
+
+  const addStage = (name, formula, heat, from = null, to = null) => {
+    if (Math.abs(heat) > 1e-12) stages.push({ name, formula, heat, from, to });
+  };
+
+  const specificHeats = [cs, cl, cg];
+  const phaseLabels = ['sólido', 'líquido', 'vapor'];
+  const addSensibleStage = (phaseIndex, from, to) => {
+    const verb = to >= from ? 'Calentar' : 'Enfriar';
+    addStage(`${verb} ${phaseLabels[phaseIndex]}`, `Q = m c_${['s', 'l', 'v'][phaseIndex]} ΔT`, m * specificHeats[phaseIndex] * (to - from), from, to);
+  };
+
+  if (initialPhaseIndex === finalPhaseIndex) {
+    addSensibleStage(initialPhaseIndex, ti, tf);
+  } else if (initialPhaseIndex < finalPhaseIndex) {
+    let currentTemperature = ti;
+    for (let phaseIndex = initialPhaseIndex; phaseIndex < finalPhaseIndex; phaseIndex += 1) {
+      const boundary = phaseIndex === 0 ? tm : tb;
+      addSensibleStage(phaseIndex, currentTemperature, boundary);
+      addStage(phaseIndex === 0 ? 'Fundir' : 'Evaporar', phaseIndex === 0 ? 'Q = m L_f' : 'Q = m L_v', m * (phaseIndex === 0 ? lf : lv), boundary, boundary);
+      currentTemperature = boundary;
+    }
+    addSensibleStage(finalPhaseIndex, currentTemperature, tf);
+  } else {
+    let currentTemperature = ti;
+    for (let phaseIndex = initialPhaseIndex; phaseIndex > finalPhaseIndex; phaseIndex -= 1) {
+      const boundary = phaseIndex === 2 ? tb : tm;
+      addSensibleStage(phaseIndex, currentTemperature, boundary);
+      addStage(phaseIndex === 2 ? 'Condensar' : 'Solidificar', phaseIndex === 2 ? 'Q = −m L_v' : 'Q = −m L_f', -m * (phaseIndex === 2 ? lv : lf), boundary, boundary);
+      currentTemperature = boundary;
+    }
+    addSensibleStage(finalPhaseIndex, currentTemperature, tf);
+  }
+
+  return {
+    stages,
+    total: stages.reduce((sum, stage) => sum + stage.heat, 0),
+    error: null
+  };
+}
+
+function HeatingCurveCalculator({ values, result, onValues }) {
+  const update = (patch) => onValues(current => ({ ...current, ...patch }));
+  const transitionLabel = getHeatingTransitionLabel(values.initialPhase, values.finalPhase);
+  const updatePhase = (field, phase) => {
+    const temperatureField = field === 'initialPhase' ? 'initialTemperature' : 'finalTemperature';
+    const suggestedTemperature = phase === 'solid'
+      ? Number(values.meltingPoint) - 10
+      : phase === 'liquid'
+        ? (Number(values.meltingPoint) + Number(values.boilingPoint)) / 2
+        : Number(values.boilingPoint) + 10;
+    update({ [field]: phase, [temperatureField]: suggestedTemperature });
+  };
+  const totalSense = Math.abs(result.total) < 1e-12
+    ? 'Sin energía neta'
+    : result.total > 0
+      ? 'Proceso de calentamiento'
+      : 'Proceso de enfriamiento';
+
+  return (
+    <div className="thermo-card equilibrium-card">
+      <span className="eyebrow">CALORIMETRÍA / CURVA DE CALENTAMIENTO</span>
+      <h2>Calor total por etapas</h2>
+      <p>Elegí los estados inicial y final. El simulador arma el recorrido completo y suma sólo las etapas de calor sensible y latente necesarias.</p>
+
+      <div className="phase-selector" aria-label="Tipo de transición">
+        <label>
+          <span>Estado inicial</span>
+          <select value={values.initialPhase} onChange={event => updatePhase('initialPhase', event.target.value)}>
+            {Object.entries(PHASES).map(([id, phase]) => <option key={id} value={id}>{phase.label}</option>)}
+          </select>
+        </label>
+        <span className="phase-arrow" aria-hidden="true">→</span>
+        <label>
+          <span>Estado final</span>
+          <select value={values.finalPhase} onChange={event => updatePhase('finalPhase', event.target.value)}>
+            {Object.entries(PHASES).map(([id, phase]) => <option key={id} value={id}>{phase.label}</option>)}
+          </select>
+        </label>
+        <div className="phase-process">
+          <span>Proceso</span>
+          <strong>{transitionLabel}</strong>
+        </div>
+      </div>
+
+      <div className="temperature-input-grid heating-curve-grid">
+        <label>
+          <span>Masa m</span>
+          <input type="number" step="any" value={values.mass} onChange={event => update({ mass: event.target.value })} />
+          <small>kg</small>
+        </label>
+        <label>
+          <span>T inicial</span>
+          <input type="number" step="any" value={values.initialTemperature} onChange={event => update({ initialTemperature: event.target.value })} />
+          <small>°C</small>
+        </label>
+        <label>
+          <span>T final</span>
+          <input type="number" step="any" value={values.finalTemperature} onChange={event => update({ finalTemperature: event.target.value })} />
+          <small>°C</small>
+        </label>
+        <label>
+          <span>Punto de fusión</span>
+          <input type="number" step="any" value={values.meltingPoint} onChange={event => update({ meltingPoint: event.target.value })} />
+          <small>°C</small>
+        </label>
+        <label>
+          <span>Punto de ebullición</span>
+          <input type="number" step="any" value={values.boilingPoint} onChange={event => update({ boilingPoint: event.target.value })} />
+          <small>°C</small>
+        </label>
+      </div>
+
+      <div className="temperature-input-grid heating-curve-grid material-constants-grid">
+        <label>
+          <span>c sólido</span>
+          <input type="number" step="any" value={values.solidSpecificHeat} onChange={event => update({ solidSpecificHeat: event.target.value })} />
+          <small>J/(kg·°C)</small>
+        </label>
+        <label>
+          <span>L fusión</span>
+          <input type="number" step="any" value={values.fusionLatentHeat} onChange={event => update({ fusionLatentHeat: event.target.value })} />
+          <small>J/kg</small>
+        </label>
+        <label>
+          <span>c líquido</span>
+          <input type="number" step="any" value={values.liquidSpecificHeat} onChange={event => update({ liquidSpecificHeat: event.target.value })} />
+          <small>J/(kg·°C)</small>
+        </label>
+        <label>
+          <span>L vaporización</span>
+          <input type="number" step="any" value={values.vaporizationLatentHeat} onChange={event => update({ vaporizationLatentHeat: event.target.value })} />
+          <small>J/kg</small>
+        </label>
+        <label>
+          <span>c vapor</span>
+          <input type="number" step="any" value={values.gasSpecificHeat} onChange={event => update({ gasSpecificHeat: event.target.value })} />
+          <small>J/(kg·°C)</small>
+        </label>
+      </div>
+
+      {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+      <div className="stage-table">
+        <div className="stage-head">
+          <span>Etapa</span>
+          <span>Intervalo</span>
+          <span>Fórmula</span>
+          <span>Q J</span>
+        </div>
+        {result.stages.length ? result.stages.map((stage, index) => (
+          <div className="stage-row" key={`${stage.name}-${index}`}>
+            <strong>{stage.name}</strong>
+            <span>{stage.from === stage.to ? `${formatEnergy(stage.from)} °C` : `${formatEnergy(stage.from)} → ${formatEnergy(stage.to)} °C`}</span>
+            <code>{stage.formula}</code>
+            <b>{formatEnergy(stage.heat)}</b>
+          </div>
+        )) : (
+          <div className="stage-row empty-stage"><strong>Sin etapas</strong><span>{result.error ? 'Revisá las entradas' : 'No hay cambio térmico'}</span><code>—</code><b>—</b></div>
+        )}
+      </div>
+
+      <div className="temperature-results equilibrium-result">
+        <article className="source">
+          <span>Calor total</span>
+          <strong>{formatEnergy(result.total)}</strong>
+          <small>J</small>
+        </article>
+        <article>
+          <span>Equivalente</span>
+          <strong>{formatEnergy(result.total / 1000)}</strong>
+          <small>kJ</small>
+        </article>
+        <article>
+          <span>Interpretación</span>
+          <strong className="result-note">{totalSense}</strong>
+          <small>Σ de todas las etapas</small>
+        </article>
+      </div>
+    </div>
+  );
+}
+
+function getHeatingTransitionLabel(initialPhase, finalPhase) {
+  const transitionKey = `${initialPhase}-${finalPhase}`;
+  const labels = {
+    'solid-solid': 'Sin cambio de fase',
+    'liquid-liquid': 'Sin cambio de fase',
+    'gas-gas': 'Sin cambio de fase',
+    'solid-liquid': 'Fusión',
+    'liquid-solid': 'Solidificación',
+    'liquid-gas': 'Vaporización',
+    'gas-liquid': 'Condensación',
+    'solid-gas': 'Fusión + vaporización',
+    'gas-solid': 'Condensación + solidificación'
+  };
+
+  return labels[transitionKey] ?? 'Transición';
+}
+
 function TemperatureFormulas() {
   return (
     <section className="formula-panel" aria-label="Fórmulas utilizadas">
@@ -428,6 +704,32 @@ function ThermalEquilibriumFormulas() {
           <p>El sistema está aislado.</p>
           <p>No hay cambio de fase.</p>
           <p>El calorímetro no absorbe calor o su capacidad térmica se desprecia.</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function HeatingCurveFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Curva de calentamiento con cambios de fase</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Tramos sensibles</h3>
+          <p><code>Q = m c ΔT</code></p>
+          <p>Se usa para calentar o enfriar sólido, líquido o vapor sin cambio de fase.</p>
+        </article>
+        <article>
+          <h3>Tramos latentes</h3>
+          <p><code>Q = m L_f</code> para fusión.</p>
+          <p><code>Q = m L_v</code> para vaporización.</p>
+          <p>La temperatura permanece constante durante el cambio de fase.</p>
+        </article>
+        <article>
+          <h3>Calor total</h3>
+          <p><code>Q_total = Σ Q_etapas</code></p>
+          <p>Ejemplo: calentar sólido + fundir + calentar líquido + evaporar + calentar vapor si corresponde.</p>
         </article>
       </div>
     </section>

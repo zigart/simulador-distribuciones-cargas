@@ -163,6 +163,16 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .temperature-input-grid label small { display: block; margin-top: 6px; color: var(--muted); font: 8px 'DM Mono', monospace; }
 .sensible-heat-grid { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
 .latent-heat-grid { grid-template-columns: repeat(2, minmax(190px, 260px)); }
+.heating-curve-grid { grid-template-columns: repeat(5, minmax(125px, 1fr)); }
+.material-constants-grid { margin-top: 14px; }
+.phase-selector { display: grid; grid-template-columns: minmax(180px, 240px) 32px minmax(180px, 240px) 1fr; gap: 12px; align-items: end; margin-top: 24px; border: 1px solid #dfe5e1; border-radius: 12px; background: #f8faf7; padding: 16px; }
+.phase-selector label > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.phase-selector select { width: 100%; border: 1px solid var(--line); border-radius: 9px; background: white; padding: 12px; outline: 0; font: 12px 'DM Mono', monospace; }
+.phase-process { align-self: stretch; justify-self: end; display: flex; flex-direction: column; justify-content: center; min-width: 180px; border: 1px solid #e2e8e4; border-radius: 9px; background: white; padding: 9px 12px; }
+.phase-process span { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.phase-process strong { margin-top: 4px; color: var(--ink); font-size: 11px; line-height: 1.2; }
+.phase-arrow { align-self: end; padding-bottom: 10px; color: var(--muted); text-align: center; font-size: 18px; }
+.heating-curve-error { margin-top: 16px; border: 1px solid #e8b8b2; border-radius: 9px; background: #fff4f2; color: #8a2920; padding: 11px 13px; font-size: 10px; font-weight: 700; }
 .temperature-results { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 12px; margin-top: 24px; }
 .temperature-results article { border: 1px solid #e2e8e4; border-radius: 12px; background: #fbfcfa; padding: 18px; }
 .temperature-results article.source { border-color: var(--ink); box-shadow: inset 0 -3px var(--lime); }
@@ -180,9 +190,20 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .equilibrium-row button { border-right: 0; cursor: pointer; color: var(--red); font-size: 15px; }
 .equilibrium-row button:disabled { color: var(--muted); cursor: not-allowed; }
 .add-substance-button { margin-top: 12px; border: 1px dashed #b9c4bf; border-radius: 9px; background: rgba(255,255,255,.8); padding: 10px 13px; cursor: pointer; color: var(--muted); font-size: 10px; font-weight: 800; }
+.stage-table { margin-top: 22px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: white; }
+.stage-head, .stage-row { display: grid; grid-template-columns: minmax(130px, 1.2fr) minmax(110px, .9fr) minmax(130px, 1fr) minmax(110px, .9fr); align-items: center; }
+.stage-head { background: #f4f6f3; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+.stage-head span, .stage-row strong, .stage-row span, .stage-row code, .stage-row b { min-width: 0; border-right: 1px solid #edf0ee; border-top: 1px solid #edf0ee; padding: 10px; }
+.stage-head span { border-top: 0; }
+.stage-row strong { font-size: 10px; }
+.stage-row span { color: var(--muted); font: 9px 'DM Mono', monospace; }
+.stage-row code { color: var(--ink); font: 9px 'DM Mono', monospace; }
+.stage-row b { border-right: 0; text-align: right; font: 500 10px 'DM Mono', monospace; }
+.empty-stage strong, .empty-stage span, .empty-stage code, .empty-stage b { color: var(--muted); }
 .thermo-formulas { border-top: 1px solid var(--line); }
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(13,20,19,.45); z-index: 50; display: grid; place-items: center; backdrop-filter: blur(4px); }.modal-backdrop[hidden] { display: none; }.modal { width: 350px; background: white; padding: 28px; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.2); text-align: center; }.modal-icon { display: grid; place-items: center; margin: 0 auto 12px; width: 35px; height: 35px; border-radius: 50%; background: #eff4d5; color: #6c8200; font-weight: 700; }.modal h3 { margin: 0; font-size: 17px; }.modal p { color: var(--muted); font-size: 10px; line-height: 1.55; }.modal-actions { display: flex; gap: 8px; margin-top: 20px; }.modal-actions button { flex: 1; border: 1px solid var(--line); border-radius: 7px; background: white; padding: 9px; cursor: pointer; font-size: 10px; }.modal-actions button:last-child { background: var(--ink); color: white; border-color: var(--ink); }
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 60; background: var(--ink); color: white; border-radius: 8px; padding: 11px 15px; font-size: 9px; transform: translateY(80px); opacity: 0; transition: .25s; }.toast.show { transform: translateY(0); opacity: 1; }
 
 @media (max-width: 1250px) { .workspace { grid-template-columns: 250px minmax(500px,1fr) 295px; }.thermo-workspace { grid-template-columns: 250px 1fr; }.regions-panel { padding-left: 14px; padding-right: 14px; }.properties-panel { padding-left: 16px; padding-right: 16px; }.topbar { grid-template-columns: 220px 1fr 300px; } }
+@media (max-width: 900px) { .thermo-workspace { grid-template-columns: 1fr; }.thermo-menu { border-right: 0; border-bottom: 1px solid var(--line); }.calc-menu-list { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); }.thermo-panel { padding: 18px; }.phase-selector { grid-template-columns: 1fr 28px 1fr; }.phase-process { grid-column: 1 / -1; justify-self: stretch; min-width: 0; }.heating-curve-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }.stage-table { overflow-x: auto; }.stage-head, .stage-row { min-width: 620px; } }
