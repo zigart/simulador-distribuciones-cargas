@@ -79,12 +79,12 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .visualization-wrap.model-active .axis-label, .visualization-wrap.model-active .point-card { display: none; }
 .axis-label { position: absolute; font: 10px 'DM Mono', monospace; color: #87928e; }
 .axis-x { right: 24px; top: 50%; }.axis-y { top: 12px; left: 50%; }
-.scale-note { position: absolute; left: 18px; bottom: 16px; padding: 6px 9px; background: rgba(255,255,255,.85); border-radius: 4px; font: 8px 'DM Mono', monospace; color: var(--muted); }
+.scale-note { position: absolute; left: 18px; bottom: 62px; padding: 6px 9px; background: rgba(255,255,255,.85); border-radius: 4px; font: 8px 'DM Mono', monospace; color: var(--muted); }
 .point-card { position: absolute; display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--ink); color: white; border-radius: 7px; box-shadow: 0 6px 20px rgba(23,32,31,.2); pointer-events: none; }
 .point-dot { width: 6px; height: 6px; background: var(--lime); border-radius: 50%; box-shadow: 0 0 0 3px rgba(201,243,29,.18); }
 .point-card small { display: block; color: #aeb9b5; font-size: 7px; letter-spacing: 1px; }
 .point-card strong { font: 8px 'DM Mono', monospace; }
-.legend { display: flex; gap: 16px; align-items: center; justify-content: center; min-height: 47px; padding: 8px 14px; background: rgba(255,255,255,.9); border-top: 1px solid var(--line); flex-wrap: wrap; }
+.legend { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; gap: 16px; align-items: center; justify-content: center; min-height: 47px; padding: 8px 14px; background: rgba(255,255,255,.92); border-top: 1px solid var(--line); flex-wrap: wrap; backdrop-filter: blur(8px); }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 8px; color: var(--muted); }
 .legend-item i { width: 8px; height: 8px; border-radius: 2px; }
 .legend-item b { color: var(--ink); font-weight: 600; }
