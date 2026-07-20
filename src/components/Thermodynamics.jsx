@@ -11,6 +11,11 @@ const CALCULATORS = [
     id: 'sensible-heat',
     title: 'Calor sensible',
     description: 'Q = m c ΔT'
+  },
+  {
+    id: 'latent-heat',
+    title: 'Calor latente',
+    description: 'Q = m L'
   }
 ];
 
@@ -29,8 +34,11 @@ export default function Thermodynamics() {
   const [mass, setMass] = useState(1);
   const [specificHeat, setSpecificHeat] = useState(4186);
   const [deltaTemperature, setDeltaTemperature] = useState(10);
+  const [latentMass, setLatentMass] = useState(1);
+  const [latentHeat, setLatentHeat] = useState(334000);
   const results = useMemo(() => convertTemperature(temperature, sourceScale), [temperature, sourceScale]);
   const sensibleHeat = useMemo(() => Number(mass) * Number(specificHeat) * Number(deltaTemperature), [mass, specificHeat, deltaTemperature]);
+  const latentHeatTotal = useMemo(() => Number(latentMass) * Number(latentHeat), [latentMass, latentHeat]);
 
   return (
     <>
@@ -61,7 +69,7 @@ export default function Thermodynamics() {
               onTemperature={setTemperature}
               onSourceScale={setSourceScale}
             />
-          ) : (
+          ) : calculator === 'sensible-heat' ? (
             <SensibleHeatCalculator
               mass={mass}
               specificHeat={specificHeat}
@@ -71,12 +79,24 @@ export default function Thermodynamics() {
               onSpecificHeat={setSpecificHeat}
               onDeltaTemperature={setDeltaTemperature}
             />
+          ) : (
+            <LatentHeatCalculator
+              mass={latentMass}
+              latentHeat={latentHeat}
+              totalHeat={latentHeatTotal}
+              onMass={setLatentMass}
+              onLatentHeat={setLatentHeat}
+            />
           )}
         </section>
       </main>
 
       <section className="results-drawer thermo-formulas">
-        {calculator === 'temperature' ? <TemperatureFormulas /> : <SensibleHeatFormulas />}
+        {calculator === 'temperature'
+          ? <TemperatureFormulas />
+          : calculator === 'sensible-heat'
+            ? <SensibleHeatFormulas />
+            : <LatentHeatFormulas />}
       </section>
     </>
   );
@@ -167,6 +187,47 @@ function SensibleHeatCalculator({ mass, specificHeat, deltaTemperature, sensible
   );
 }
 
+function LatentHeatCalculator({ mass, latentHeat, totalHeat, onMass, onLatentHeat }) {
+  return (
+    <div className="thermo-card">
+      <span className="eyebrow">CALORIMETRÍA / CALOR LATENTE</span>
+      <h2>Calcular Q = mL</h2>
+      <p>Calcula la energía necesaria para que una sustancia cambie de estado físico a temperatura constante.</p>
+
+      <div className="temperature-input-grid latent-heat-grid">
+        <label>
+          <span>Masa m</span>
+          <input type="number" step="any" value={mass} onChange={event => onMass(event.target.value)} />
+          <small>kg</small>
+        </label>
+        <label>
+          <span>Calor latente L</span>
+          <input type="number" step="any" value={latentHeat} onChange={event => onLatentHeat(event.target.value)} />
+          <small>J/kg</small>
+        </label>
+      </div>
+
+      <div className="temperature-results latent-heat-result">
+        <article className="source">
+          <span>Calor Q</span>
+          <strong>{formatEnergy(totalHeat)}</strong>
+          <small>J</small>
+        </article>
+        <article>
+          <span>Equivalente</span>
+          <strong>{formatEnergy(totalHeat / 1000)}</strong>
+          <small>kJ</small>
+        </article>
+        <article>
+          <span>Proceso</span>
+          <strong className="result-note">Cambio de fase a temperatura constante</strong>
+          <small>fusión, solidificación, vaporización o condensación</small>
+        </article>
+      </div>
+    </div>
+  );
+}
+
 function TemperatureFormulas() {
   return (
     <section className="formula-panel" aria-label="Fórmulas utilizadas">
@@ -213,6 +274,33 @@ function SensibleHeatFormulas() {
           <p><code>Q &gt; 0</code>: el cuerpo absorbe calor.</p>
           <p><code>Q &lt; 0</code>: el cuerpo cede calor.</p>
           <p><code>Q = 0</code>: no hay cambio térmico neto.</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function LatentHeatFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Calor latente durante un cambio de fase</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Calor latente</h3>
+          <p><code>Q = m L</code></p>
+          <p>Se usa cuando la temperatura permanece constante y cambia el estado físico.</p>
+        </article>
+        <article>
+          <h3>Unidades</h3>
+          <p><code>m</code>: masa en <code>kg</code></p>
+          <p><code>L</code>: calor latente en <code>J/kg</code></p>
+          <p><code>Q</code>: energía térmica en <code>J</code></p>
+        </article>
+        <article>
+          <h3>Tipos comunes</h3>
+          <p><code>L_f</code>: calor latente de fusión.</p>
+          <p><code>L_v</code>: calor latente de vaporización.</p>
+          <p>El valor de <code>L</code> depende de la sustancia y del cambio de fase.</p>
         </article>
       </div>
     </section>
