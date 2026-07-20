@@ -16,6 +16,11 @@ const CALCULATORS = [
     id: 'latent-heat',
     title: 'Calor latente',
     description: 'Q = m L'
+  },
+  {
+    id: 'thermal-equilibrium',
+    title: 'Equilibrio térmico',
+    description: 'ΣQ = 0'
   }
 ];
 
@@ -36,9 +41,14 @@ export default function Thermodynamics() {
   const [deltaTemperature, setDeltaTemperature] = useState(10);
   const [latentMass, setLatentMass] = useState(1);
   const [latentHeat, setLatentHeat] = useState(334000);
+  const [mixture, setMixture] = useState([
+    { id: 'substance-1', name: 'Sustancia 1', mass: 1, specificHeat: 4186, temperature: 80 },
+    { id: 'substance-2', name: 'Sustancia 2', mass: 1, specificHeat: 4186, temperature: 20 }
+  ]);
   const results = useMemo(() => convertTemperature(temperature, sourceScale), [temperature, sourceScale]);
   const sensibleHeat = useMemo(() => Number(mass) * Number(specificHeat) * Number(deltaTemperature), [mass, specificHeat, deltaTemperature]);
   const latentHeatTotal = useMemo(() => Number(latentMass) * Number(latentHeat), [latentMass, latentHeat]);
+  const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
 
   return (
     <>
@@ -79,13 +89,19 @@ export default function Thermodynamics() {
               onSpecificHeat={setSpecificHeat}
               onDeltaTemperature={setDeltaTemperature}
             />
-          ) : (
+          ) : calculator === 'latent-heat' ? (
             <LatentHeatCalculator
               mass={latentMass}
               latentHeat={latentHeat}
               totalHeat={latentHeatTotal}
               onMass={setLatentMass}
               onLatentHeat={setLatentHeat}
+            />
+          ) : (
+            <ThermalEquilibriumCalculator
+              substances={mixture}
+              equilibrium={equilibrium}
+              onSubstances={setMixture}
             />
           )}
         </section>
@@ -96,7 +112,9 @@ export default function Thermodynamics() {
           ? <TemperatureFormulas />
           : calculator === 'sensible-heat'
             ? <SensibleHeatFormulas />
-            : <LatentHeatFormulas />}
+            : calculator === 'latent-heat'
+              ? <LatentHeatFormulas />
+              : <ThermalEquilibriumFormulas />}
       </section>
     </>
   );
@@ -228,6 +246,89 @@ function LatentHeatCalculator({ mass, latentHeat, totalHeat, onMass, onLatentHea
   );
 }
 
+function calculateThermalEquilibrium(substances) {
+  const numerator = substances.reduce((sum, item) => sum + Number(item.mass) * Number(item.specificHeat) * Number(item.temperature), 0);
+  const denominator = substances.reduce((sum, item) => sum + Number(item.mass) * Number(item.specificHeat), 0);
+  const finalTemperature = denominator === 0 ? NaN : numerator / denominator;
+  const heats = substances.map(item => ({
+    id: item.id,
+    heat: Number(item.mass) * Number(item.specificHeat) * (finalTemperature - Number(item.temperature))
+  }));
+  return { finalTemperature, numerator, denominator, heats };
+}
+
+function ThermalEquilibriumCalculator({ substances, equilibrium, onSubstances }) {
+  function updateSubstance(id, patch) {
+    onSubstances(current => current.map(item => item.id === id ? { ...item, ...patch } : item));
+  }
+
+  function addSubstance() {
+    onSubstances(current => [
+      ...current,
+      {
+        id: `substance-${Date.now()}`,
+        name: `Sustancia ${current.length + 1}`,
+        mass: 1,
+        specificHeat: 4186,
+        temperature: 25
+      }
+    ]);
+  }
+
+  function removeSubstance(id) {
+    onSubstances(current => current.length <= 2 ? current : current.filter(item => item.id !== id));
+  }
+
+  return (
+    <div className="thermo-card equilibrium-card">
+      <span className="eyebrow">CALORIMETRÍA / EQUILIBRIO TÉRMICO</span>
+      <h2>Temperatura final de mezcla</h2>
+      <p>Resuelve mezclas térmicas en un calorímetro ideal: sistema aislado, sin pérdidas, donde la suma del calor cedido y absorbido es cero.</p>
+
+      <div className="equilibrium-table">
+        <div className="equilibrium-head">
+          <span>Sustancia</span>
+          <span>m kg</span>
+          <span>c J/(kg·°C)</span>
+          <span>T inicial °C</span>
+          <span>Qᵢ J</span>
+          <span></span>
+        </div>
+        {substances.map((item, index) => (
+          <div className="equilibrium-row" key={item.id}>
+            <input value={item.name} onChange={event => updateSubstance(item.id, { name: event.target.value })} />
+            <input type="number" step="any" value={item.mass} onChange={event => updateSubstance(item.id, { mass: event.target.value })} />
+            <input type="number" step="any" value={item.specificHeat} onChange={event => updateSubstance(item.id, { specificHeat: event.target.value })} />
+            <input type="number" step="any" value={item.temperature} onChange={event => updateSubstance(item.id, { temperature: event.target.value })} />
+            <strong>{formatEnergy(equilibrium.heats[index]?.heat)}</strong>
+            <button type="button" disabled={substances.length <= 2} onClick={() => removeSubstance(item.id)}>×</button>
+          </div>
+        ))}
+      </div>
+
+      <button className="add-substance-button" type="button" onClick={addSubstance}>＋ Agregar sustancia</button>
+
+      <div className="temperature-results equilibrium-result">
+        <article className="source">
+          <span>Temperatura final</span>
+          <strong>{formatEnergy(equilibrium.finalTemperature)}</strong>
+          <small>°C</small>
+        </article>
+        <article>
+          <span>Balance</span>
+          <strong>{formatEnergy(equilibrium.heats.reduce((sum, item) => sum + item.heat, 0))}</strong>
+          <small>J ≈ 0</small>
+        </article>
+        <article>
+          <span>Modelo</span>
+          <strong className="result-note">Calorímetro ideal</strong>
+          <small>sin pérdidas al entorno</small>
+        </article>
+      </div>
+    </div>
+  );
+}
+
 function TemperatureFormulas() {
   return (
     <section className="formula-panel" aria-label="Fórmulas utilizadas">
@@ -301,6 +402,32 @@ function LatentHeatFormulas() {
           <p><code>L_f</code>: calor latente de fusión.</p>
           <p><code>L_v</code>: calor latente de vaporización.</p>
           <p>El valor de <code>L</code> depende de la sustancia y del cambio de fase.</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function ThermalEquilibriumFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Mezcla térmica en calorímetro ideal</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Balance térmico</h3>
+          <p><code>Σ Qᵢ = 0</code></p>
+          <p><code>Q = m c ΔT</code></p>
+        </article>
+        <article>
+          <h3>Temperatura final</h3>
+          <p><code>Σ mᵢ cᵢ (T_f − Tᵢ) = 0</code></p>
+          <p><code>T_f = (Σ mᵢ cᵢ Tᵢ) / (Σ mᵢ cᵢ)</code></p>
+        </article>
+        <article>
+          <h3>Supuestos</h3>
+          <p>El sistema está aislado.</p>
+          <p>No hay cambio de fase.</p>
+          <p>El calorímetro no absorbe calor o su capacidad térmica se desprecia.</p>
         </article>
       </div>
     </section>

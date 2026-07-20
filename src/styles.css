@@ -154,6 +154,7 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .calc-menu-list small { margin-top: 4px; color: var(--muted); font-size: 8px; }
 .thermo-panel { padding: 34px; background-color: #f4f6f3; background-image: linear-gradient(#e7ebe7 1px, transparent 1px), linear-gradient(90deg, #e7ebe7 1px, transparent 1px); background-size: 28px 28px; }
 .thermo-card { max-width: 900px; min-height: 360px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.94); box-shadow: 0 18px 60px rgba(23,32,31,.08); padding: 30px; }
+.thermo-card.equilibrium-card { max-width: 1080px; }
 .thermo-card h2 { margin: 8px 0 8px; font-size: 32px; letter-spacing: -1px; }
 .thermo-card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .temperature-input-grid { display: grid; grid-template-columns: minmax(180px, 260px) minmax(220px, 300px); gap: 14px; margin-top: 26px; }
@@ -168,6 +169,17 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .temperature-results span, .temperature-results small { display: block; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
 .temperature-results strong { display: block; margin: 8px 0 4px; font: 500 28px 'DM Mono', monospace; letter-spacing: -1.5px; color: var(--ink); }
 .temperature-results strong.result-note { font-family: Manrope, sans-serif; font-size: 16px; letter-spacing: -.3px; line-height: 1.2; }
+.equilibrium-table { margin-top: 24px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: white; }
+.equilibrium-head, .equilibrium-row { display: grid; grid-template-columns: minmax(130px, 1.2fr) repeat(4, minmax(95px, 1fr)) 34px; gap: 0; align-items: center; }
+.equilibrium-head { background: #f4f6f3; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+.equilibrium-head span, .equilibrium-row input, .equilibrium-row strong, .equilibrium-row button { min-width: 0; border: 0; border-right: 1px solid #edf0ee; border-top: 1px solid #edf0ee; padding: 10px; background: transparent; }
+.equilibrium-head span { border-top: 0; }
+.equilibrium-row input { outline: 0; font: 10px 'DM Mono', monospace; }
+.equilibrium-row input:first-child { font-family: Manrope, sans-serif; font-weight: 700; }
+.equilibrium-row strong { font: 500 9px 'DM Mono', monospace; text-align: right; color: var(--ink); }
+.equilibrium-row button { border-right: 0; cursor: pointer; color: var(--red); font-size: 15px; }
+.equilibrium-row button:disabled { color: var(--muted); cursor: not-allowed; }
+.add-substance-button { margin-top: 12px; border: 1px dashed #b9c4bf; border-radius: 9px; background: rgba(255,255,255,.8); padding: 10px 13px; cursor: pointer; color: var(--muted); font-size: 10px; font-weight: 800; }
 .thermo-formulas { border-top: 1px solid var(--line); }
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(13,20,19,.45); z-index: 50; display: grid; place-items: center; backdrop-filter: blur(4px); }.modal-backdrop[hidden] { display: none; }.modal { width: 350px; background: white; padding: 28px; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.2); text-align: center; }.modal-icon { display: grid; place-items: center; margin: 0 auto 12px; width: 35px; height: 35px; border-radius: 50%; background: #eff4d5; color: #6c8200; font-weight: 700; }.modal h3 { margin: 0; font-size: 17px; }.modal p { color: var(--muted); font-size: 10px; line-height: 1.55; }.modal-actions { display: flex; gap: 8px; margin-top: 20px; }.modal-actions button { flex: 1; border: 1px solid var(--line); border-radius: 7px; background: white; padding: 9px; cursor: pointer; font-size: 10px; }.modal-actions button:last-child { background: var(--ink); color: white; border-color: var(--ink); }
