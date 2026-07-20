@@ -23,8 +23,6 @@ body { min-width: 1100px; }
 .brand { display: flex; gap: 10px; align-items: center; text-decoration: none; color: var(--ink); font-size: 23px; font-weight: 700; letter-spacing: -.8px; }
 .topbar-center { text-align: center; font-size: 11px; letter-spacing: 1px; font-weight: 700; }
 .eyebrow { color: var(--muted); font-size: 9px; letter-spacing: 1.6px; font-weight: 700; }
-.status-pill { justify-self: end; padding: 7px 12px; border: 1px solid var(--line); border-radius: 20px; font-size: 10px; color: var(--muted); font-weight: 600; }
-.status-pill span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--lime-dark); margin-right: 6px; box-shadow: 0 0 0 3px rgba(142,174,0,.14); }
 
 .workspace { flex: 1; min-height: 660px; display: grid; grid-template-columns: 276px minmax(540px, 1fr) 320px; border-bottom: 1px solid var(--line); }
 .panel { background: var(--white); }
