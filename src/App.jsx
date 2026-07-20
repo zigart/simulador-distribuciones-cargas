@@ -5,6 +5,7 @@ import RegionEditor from './components/RegionEditor.jsx';
 import Visualization2D from './components/Visualization2D.jsx';
 import Visualization3D from './components/Visualization3D.jsx';
 import ResultsPanel from './components/ResultsPanel.jsx';
+import Thermodynamics from './components/Thermodynamics.jsx';
 import Modal from './components/Modal.jsx';
 import Toast from './components/Toast.jsx';
 import { COLORS } from './physics/constants.js';
@@ -19,6 +20,7 @@ function normalizeRegions(regions, geometry) {
 }
 
 export default function App() {
+  const [module, setModule] = useState('distributions');
   const [geometry, setGeometry] = useState('sphere');
   const [regions, setRegions] = useState(() => defaultSphereRegions());
   const [selectedId, setSelectedId] = useState(null);
@@ -152,65 +154,75 @@ export default function App() {
     <>
       <link rel="icon" href={favicon} />
       <div className="app-shell">
-        <Header title={`CONFIGURACIÓN ${labels.shape} CONCÉNTRICA`} />
-        <main className="workspace">
-          <RegionPanel
-            geometry={geometry}
-            labels={labels}
-            regions={normalizedRegions}
-            selectedId={selectedId}
-            chargeUnit={chargeUnit}
-            onSelect={setSelectedId}
-            onClear={() => setSelectedId(null)}
-            onAdd={addRegion}
-            onGeometryRequest={requestGeometry}
-          />
-          <section className="canvas-panel">
-            <div className="canvas-toolbar">
-              <div className="segmented">
-                <button className={view === 'field' ? 'active' : ''} onClick={() => setView('field')}>Campo</button>
-                <button className={view === 'model' ? 'active' : ''} onClick={() => setView('model')}>3D</button>
-              </div>
-              <div className="canvas-actions">
-                <label className="zoom-control" htmlFor="graphZoom">
-                  <span>Zoom</span>
-                  <input id="graphZoom" type="range" min="0.35" max="30" step="0.05" value={graphZoom} onChange={e => setGraphZoom(Number(e.target.value) || 1)} />
-                  <b>{graphZoom.toLocaleString('es-AR', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}×</b>
-                </label>
-                <button className={`tool-button ${showMotion ? 'active' : ''}`} onClick={() => setShowMotion(value => !value)}>Movimiento</button>
-                <button className={`tool-button ${showLabels ? 'active' : ''}`} onClick={() => setShowLabels(value => !value)}>Dimensiones</button>
-                <button className="tool-button" title="Restablecer vista" onClick={resetView}>↺</button>
-              </div>
-            </div>
-            <div className={`visualization-wrap ${view === 'model' ? 'model-active' : ''}`} onClick={(event) => {
-              if (event.target === event.currentTarget) setSelectedId(null);
-            }}>
-              <Visualization2D state={state} labels={labels} onSelect={setSelectedId} onClear={() => setSelectedId(null)} />
-              <Visualization3D state={state} labels={labels} />
-            </div>
-          </section>
-          <RegionEditor
-            geometry={geometry}
-            labels={labels}
-            regions={normalizedRegions}
-            selected={selected}
-            chargeMode={chargeMode}
-            chargeUnit={chargeUnit}
-            densityUnit={densityUnit}
-            onChargeMode={setChargeMode}
-            onChargeUnit={setChargeUnit}
-            onDensityUnit={setDensityUnit}
-            onChange={updateSelected}
-            onMaterial={changeMaterial}
-            onDelete={deleteSelected}
-          />
-        </main>
-        <ResultsPanel
-          state={state}
-          onRadius={value => setRadiusState(Math.max(0, Number(value) || 0))}
-          contributionsCollapsed={contributionsCollapsed}
-          onToggleContributions={() => setContributionsCollapsed(value => !value)}
+        <Header
+          title={module === 'distributions' ? `CONFIGURACIÓN ${labels.shape} CONCÉNTRICA` : 'CONVERSOR DE TEMPERATURA'}
+          module={module}
+          onModuleChange={setModule}
         />
+        {module === 'distributions' ? (
+          <>
+            <main className="workspace">
+              <RegionPanel
+                geometry={geometry}
+                labels={labels}
+                regions={normalizedRegions}
+                selectedId={selectedId}
+                chargeUnit={chargeUnit}
+                onSelect={setSelectedId}
+                onClear={() => setSelectedId(null)}
+                onAdd={addRegion}
+                onGeometryRequest={requestGeometry}
+              />
+              <section className="canvas-panel">
+                <div className="canvas-toolbar">
+                  <div className="segmented">
+                    <button className={view === 'field' ? 'active' : ''} onClick={() => setView('field')}>Campo</button>
+                    <button className={view === 'model' ? 'active' : ''} onClick={() => setView('model')}>3D</button>
+                  </div>
+                  <div className="canvas-actions">
+                    <label className="zoom-control" htmlFor="graphZoom">
+                      <span>Zoom</span>
+                      <input id="graphZoom" type="range" min="0.35" max="30" step="0.05" value={graphZoom} onChange={e => setGraphZoom(Number(e.target.value) || 1)} />
+                      <b>{graphZoom.toLocaleString('es-AR', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}×</b>
+                    </label>
+                    <button className={`tool-button ${showMotion ? 'active' : ''}`} onClick={() => setShowMotion(value => !value)}>Movimiento</button>
+                    <button className={`tool-button ${showLabels ? 'active' : ''}`} onClick={() => setShowLabels(value => !value)}>Dimensiones</button>
+                    <button className="tool-button" title="Restablecer vista" onClick={resetView}>↺</button>
+                  </div>
+                </div>
+                <div className={`visualization-wrap ${view === 'model' ? 'model-active' : ''}`} onClick={(event) => {
+                  if (event.target === event.currentTarget) setSelectedId(null);
+                }}>
+                  <Visualization2D state={state} labels={labels} onSelect={setSelectedId} onClear={() => setSelectedId(null)} />
+                  <Visualization3D state={state} labels={labels} />
+                </div>
+              </section>
+              <RegionEditor
+                geometry={geometry}
+                labels={labels}
+                regions={normalizedRegions}
+                selected={selected}
+                chargeMode={chargeMode}
+                chargeUnit={chargeUnit}
+                densityUnit={densityUnit}
+                onChargeMode={setChargeMode}
+                onChargeUnit={setChargeUnit}
+                onDensityUnit={setDensityUnit}
+                onChange={updateSelected}
+                onMaterial={changeMaterial}
+                onDelete={deleteSelected}
+              />
+            </main>
+            <ResultsPanel
+              state={state}
+              onRadius={value => setRadiusState(Math.max(0, Number(value) || 0))}
+              contributionsCollapsed={contributionsCollapsed}
+              onToggleContributions={() => setContributionsCollapsed(value => !value)}
+            />
+          </>
+        ) : (
+          <Thermodynamics />
+        )}
       </div>
       <Modal modal={modal} onCancel={() => setModal(null)} />
       <Toast text={toast} />
