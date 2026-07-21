@@ -606,7 +606,7 @@ function IsothermalProcessCalculator({ values, result, onValues }) {
             <small>J</small>
           </article>
           <article>
-            <span>ΔE<sub>int</sub></span>
+            <span>ΔU</span>
             <strong>{formatEnergy(result.internalEnergyChange)}</strong>
             <small>J · {processType}</small>
           </article>
@@ -623,7 +623,7 @@ function IsothermalProcessTheoryCard() {
       <span className="eyebrow">TEORÍA</span>
       <h3>Proceso isotérmico</h3>
       <p>Un proceso que se presenta a temperatura constante se llama proceso isotérmico.</p>
-      <p>En un proceso isotérmico que involucra un gas ideal, ΔE<sub>int</sub> =0.</p>
+      <p>En un proceso isotérmico que involucra un gas ideal, ΔU = 0.</p>
       <p>Para un proceso isotérmico, se concluye de la primera ley que la transferencia de energía <code>Q</code> debe ser igual al negativo del trabajo consumido en el gas; es decir, <code>Q=−W</code>.</p>
       <p>El trabajo consumido en un gas ideal durante un proceso isotérmico es</p>
       <div className="theory-main-formula"><span>W = nRT ln(<VolumeRatioFormula />)</span></div>
@@ -817,14 +817,14 @@ function AdiabaticProcessCalculator({ values, result, onValues }) {
             <small>atm</small>
           </article>
           <article>
-            <span>W = ΔE<sub>int</sub></span>
+            <span>W = ΔU</span>
             <strong>{formatEnergy(result.work)}</strong>
             <small>J</small>
           </article>
           <article>
             <span>Proceso</span>
             <strong className="result-note">{processType}</strong>
-            <small>Q = 0 · ΔE<sub>int</sub> = W</small>
+            <small>Q = 0 · ΔU = W</small>
           </article>
         </div>
       </div>
@@ -840,7 +840,7 @@ function AdiabaticProcessTheoryCard() {
       <h3>Proceso adiabático</h3>
       <p>Un proceso adiabático es aquel durante el cual no entra ni sale energía del sistema por calor; <code>Q=0</code>.</p>
       <p>Al aplicar la primera ley de la termodinámica a un proceso adiabático se obtiene</p>
-      <div className="theory-main-formula"><span>ΔE<sub>int</sub> = W</span></div>
+      <div className="theory-main-formula"><span>ΔU = W</span></div>
       <p>proceso adiabático.</p>
       <p>Si un gas ideal se somete a una expansión o compresión adiabáticos, la primera ley de la termodinámica, junto con la ecuación de estado, muestra que</p>
       <div className="theory-main-formula"><span>PV<sup>γ</sup> = constante</span></div>
@@ -1771,7 +1771,7 @@ function IsothermalProcessFormulas() {
       <div className="formula-grid">
         <article>
           <h3>Temperatura constante</h3>
-          <p><code>ΔE<sub>int</sub> = 0</code></p>
+          <p><code>ΔU = 0</code></p>
           <p>Para un gas ideal en un proceso isotérmico.</p>
         </article>
         <article>
@@ -1822,7 +1822,7 @@ function AdiabaticProcessFormulas() {
         <article>
           <h3>Sin intercambio de calor</h3>
           <p><code>Q = 0</code></p>
-          <p><code>ΔE<sub>int</sub> = W</code></p>
+          <p><code>ΔU = W</code></p>
         </article>
         <article>
           <h3>Relación adiabática</h3>
