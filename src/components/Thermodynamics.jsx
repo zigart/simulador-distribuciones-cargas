@@ -28,6 +28,11 @@ const CALCULATORS = [
     description: 'ΣQ por etapas'
   },
   {
+    id: 'first-law',
+    title: 'Primer principio',
+    description: 'ΔEᵢₙₜ = Q + W'
+  },
+  {
     id: 'mechanical-equivalent',
     title: 'Equivalente mecánico',
     description: '1 cal = 4.186 J'
@@ -60,6 +65,17 @@ function formatCompactEnergy(value) {
   });
 }
 
+function HeatingStageFormula({ formula }) {
+  if (formula === 'Q = m c_s ΔT') return <>Q = m c<sub>s</sub> ΔT</>;
+  if (formula === 'Q = m c_l ΔT') return <>Q = m c<sub>l</sub> ΔT</>;
+  if (formula === 'Q = m c_v ΔT') return <>Q = m c<sub>v</sub> ΔT</>;
+  if (formula === 'Q = m L_f') return <>Q = m L<sub>f</sub></>;
+  if (formula === 'Q = m L_v') return <>Q = m L<sub>v</sub></>;
+  if (formula === 'Q = −m L_f') return <>Q = −m L<sub>f</sub></>;
+  if (formula === 'Q = −m L_v') return <>Q = −m L<sub>v</sub></>;
+  return <>{formula}</>;
+}
+
 export default function Thermodynamics() {
   const [calculator, setCalculator] = useState('temperature');
   const [temperature, setTemperature] = useState(25);
@@ -76,6 +92,10 @@ export default function Thermodynamics() {
   const [deltaTemperature, setDeltaTemperature] = useState(10);
   const [latentMass, setLatentMass] = useState(1);
   const [latentHeat, setLatentHeat] = useState(334000);
+  const [firstLaw, setFirstLaw] = useState({
+    heat: 500,
+    work: 200
+  });
   const [mixture, setMixture] = useState([
     { id: 'substance-1', name: 'Sustancia 1', mass: 1, specificHeat: 4186, temperature: 80 },
     { id: 'substance-2', name: 'Sustancia 2', mass: 1, specificHeat: 4186, temperature: 20 }
@@ -98,6 +118,7 @@ export default function Thermodynamics() {
   const mechanicalResult = useMemo(() => calculateMechanicalEquivalent(mechanical), [mechanical]);
   const sensibleHeat = useMemo(() => Number(mass) * Number(specificHeat) * Number(deltaTemperature), [mass, specificHeat, deltaTemperature]);
   const latentHeatTotal = useMemo(() => Number(latentMass) * Number(latentHeat), [latentMass, latentHeat]);
+  const firstLawResult = useMemo(() => calculateFirstLaw(firstLaw), [firstLaw]);
   const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
   const heatingCurveResult = useMemo(() => calculateHeatingCurve(heatingCurve), [heatingCurve]);
 
@@ -154,6 +175,12 @@ export default function Thermodynamics() {
               onMass={setLatentMass}
               onLatentHeat={setLatentHeat}
             />
+          ) : calculator === 'first-law' ? (
+            <FirstLawCalculator
+              values={firstLaw}
+              result={firstLawResult}
+              onValues={setFirstLaw}
+            />
           ) : calculator === 'thermal-equilibrium' ? (
             <ThermalEquilibriumCalculator
               substances={mixture}
@@ -179,9 +206,11 @@ export default function Thermodynamics() {
               ? <SensibleHeatFormulas />
               : calculator === 'latent-heat'
                 ? <LatentHeatFormulas />
-                : calculator === 'thermal-equilibrium'
-                  ? <ThermalEquilibriumFormulas />
-                  : <HeatingCurveFormulas />}
+                : calculator === 'first-law'
+                  ? <FirstLawFormulas />
+                  : calculator === 'thermal-equilibrium'
+                    ? <ThermalEquilibriumFormulas />
+                    : <HeatingCurveFormulas />}
       </section>
     </>
   );
@@ -217,6 +246,91 @@ function TemperatureConverter({ temperature, sourceScale, results, onTemperature
         ))}
       </div>
     </div>
+  );
+}
+
+function calculateFirstLaw(values) {
+  const heat = Number(values.heat);
+  const work = Number(values.work);
+
+  if (![heat, work].every(Number.isFinite)) {
+    return { internalEnergyChange: NaN, error: 'Completá todos los campos con valores numéricos.' };
+  }
+
+  return {
+    internalEnergyChange: heat + work,
+    error: null
+  };
+}
+
+function FirstLawCalculator({ values, result, onValues }) {
+  const update = (patch) => onValues(current => ({ ...current, ...patch }));
+  const interpretation = Math.abs(result.internalEnergyChange) < 1e-12
+    ? 'Energía interna constante'
+    : result.internalEnergyChange > 0
+      ? 'Aumenta la energía interna'
+      : 'Disminuye la energía interna';
+
+  return (
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card">
+        <span className="eyebrow">TERMODINÁMICA / PRIMER PRINCIPIO</span>
+        <h2>Calcular ΔE<sub>int</sub></h2>
+        <p>Relaciona el calor transferido al sistema, el trabajo consumido en el sistema y la variación de energía interna.</p>
+
+        <div className="temperature-input-grid latent-heat-grid">
+          <label>
+            <span>Calor Q</span>
+            <input type="number" step="any" value={values.heat} onChange={event => update({ heat: event.target.value })} />
+            <small>J</small>
+          </label>
+          <label>
+            <span>Trabajo W</span>
+            <input type="number" step="any" value={values.work} onChange={event => update({ work: event.target.value })} />
+            <small>J · consumido en el sistema</small>
+          </label>
+        </div>
+
+        {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+        <div className="temperature-results latent-heat-result">
+          <article className="source">
+            <span>ΔU = ΔE<sub>int</sub></span>
+            <strong>{formatEnergy(result.internalEnergyChange)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>Equivalente</span>
+            <strong>{formatEnergy(result.internalEnergyChange / 1000)}</strong>
+            <small>kJ</small>
+          </article>
+          <article>
+            <span>Interpretación</span>
+            <strong className="result-note">{interpretation}</strong>
+            <small>según el signo de ΔE<sub>int</sub></small>
+          </article>
+        </div>
+      </div>
+      <FirstLawTheoryCard />
+    </div>
+  );
+}
+
+function FirstLawTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de la primera ley de la termodinámica">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Primera ley de la termodinámica</h3>
+      <p>La primera ley de la termodinámica establece que, cuando un sistema se somete a un cambio de un estado a otro, el cambio en su energía interna es</p>
+      <div className="theory-main-formula"><span>ΔE<sub>int</sub> = Q + W</span></div>
+      <p>donde <code>Q</code> es la energía transferida al sistema por calor y <code>W</code> es el trabajo consumido en el sistema.</p>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.5: Primera ley de la termodinámica.</small>
+      </footer>
+    </aside>
   );
 }
 
@@ -536,7 +650,7 @@ function ThermalEquilibriumCalculator({ substances, equilibrium, onSubstances })
             <span>m kg</span>
             <span>c J/(kg·°C)</span>
             <span>T inicial °C</span>
-            <span>Qᵢ J</span>
+            <span>Q<sub>i</sub> J</span>
             <span></span>
           </div>
           {substances.map((item, index) => (
@@ -793,7 +907,7 @@ function HeatingCurveCalculator({ values, result, onValues }) {
             <div className="stage-row" key={`${stage.name}-${index}`}>
               <strong>{stage.name}</strong>
               <span>{stage.from === stage.to ? `${formatEnergy(stage.from)} °C` : `${formatEnergy(stage.from)} → ${formatEnergy(stage.to)} °C`}</span>
-              <code>{stage.formula}</code>
+            <code><HeatingStageFormula formula={stage.formula} /></code>
               <b>{formatEnergy(stage.heat)}</b>
             </div>
           )) : (
@@ -1017,8 +1131,8 @@ function MechanicalEquivalentFormulas() {
         </article>
         <article>
           <h3>Energía mecánica</h3>
-          <p><code>E_c = 1/2 m v²</code></p>
-          <p><code>E_p = m g h</code></p>
+          <p><code>E<sub>c</sub> = 1/2 m v²</code></p>
+          <p><code>E<sub>p</sub> = m g h</code></p>
         </article>
         <article>
           <h3>Aumento de temperatura</h3>
@@ -1047,7 +1161,7 @@ function SensibleHeatFormulas() {
         </article>
         <article>
           <h3>Cambio de temperatura</h3>
-          <p><code>ΔT = T_final − T_inicial</code></p>
+          <p><code>ΔT = T<sub>final</sub> − T<sub>inicial</sub></code></p>
           <p><code>m</code>: masa en <code>kg</code></p>
           <p><code>c</code>: calor específico en <code>J/(kg·°C)</code> o <code>J/(kg·K)</code></p>
         </article>
@@ -1076,6 +1190,31 @@ function LatentHeatFormulas() {
           <p><code>m</code>: masa en <code>kg</code></p>
           <p><code>L</code>: calor latente en <code>J/kg</code></p>
           <p><code>Q</code>: energía térmica en <code>J</code></p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function FirstLawFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Primera ley de la termodinámica</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Energía interna</h3>
+          <p><code>ΔE<sub>int</sub> = Q + W</code></p>
+          <p>Cambio de energía interna del sistema.</p>
+        </article>
+        <article>
+          <h3>Calor</h3>
+          <p><code>Q</code>: energía transferida al sistema por calor.</p>
+          <p>Entra positiva si se transfiere al sistema.</p>
+        </article>
+        <article>
+          <h3>Trabajo</h3>
+          <p><code>W</code>: trabajo consumido en el sistema.</p>
+          <p>Usa la convención de signos del libro.</p>
         </article>
       </div>
     </section>
@@ -1119,13 +1258,13 @@ function HeatingCurveFormulas() {
         </article>
         <article>
           <h3>Tramos latentes</h3>
-          <p><code>Q = m L_f</code> para fusión.</p>
-          <p><code>Q = m L_v</code> para vaporización.</p>
+          <p><code>Q = m L<sub>f</sub></code> para fusión.</p>
+          <p><code>Q = m L<sub>v</sub></code> para vaporización.</p>
           <p>La temperatura permanece constante durante el cambio de fase.</p>
         </article>
         <article>
           <h3>Calor total</h3>
-          <p><code>Q_total = Σ Q_etapas</code></p>
+          <p><code>Q<sub>total</sub> = Σ Q<sub>etapas</sub></code></p>
           <p>Ejemplo: calentar sólido + fundir + calentar líquido + evaporar + calentar vapor si corresponde.</p>
         </article>
       </div>
