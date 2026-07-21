@@ -543,7 +543,7 @@ function calculateIsothermalProcess(values) {
   }
 
   const volumeRatio = finalVolume / initialVolume;
-  const work = moles * gasConstant * temperature * Math.log(volumeRatio);
+  const work = -moles * gasConstant * temperature * Math.log(volumeRatio);
 
   return {
     work,
@@ -624,9 +624,9 @@ function IsothermalProcessTheoryCard() {
       <h3>Proceso isotérmico</h3>
       <p>Un proceso que se presenta a temperatura constante se llama proceso isotérmico.</p>
       <p>En un proceso isotérmico que involucra un gas ideal, ΔU = 0.</p>
-      <p>Para un proceso isotérmico, se concluye de la primera ley que la transferencia de energía <code>Q</code> debe ser igual al negativo del trabajo consumido en el gas; es decir, <code>Q=−W</code>.</p>
-      <p>El trabajo consumido en un gas ideal durante un proceso isotérmico es</p>
-      <div className="theory-main-formula"><span>W = nRT ln(<VolumeRatioFormula />)</span></div>
+      <p>Para un proceso isotérmico, se concluye de la primera ley que la transferencia de energía <code>Q</code> debe ser igual al negativo del trabajo realizado sobre el gas; es decir, <code>Q=−W</code>.</p>
+      <p>El trabajo realizado sobre un gas ideal durante un proceso isotérmico es</p>
+      <div className="theory-main-formula"><span>W = −nRT ln(<VolumeRatioFormula />)</span></div>
 
       <footer>
         <span>Referencia</span>
@@ -1781,7 +1781,7 @@ function IsothermalProcessFormulas() {
         </article>
         <article>
           <h3>Trabajo isotérmico</h3>
-          <p><code>W = n R T ln(<VolumeRatioFormula />)</code></p>
+          <p><code>W = −n R T ln(<VolumeRatioFormula />)</code></p>
           <p><code>R = 8.314 J/(mol·K)</code></p>
         </article>
       </div>
