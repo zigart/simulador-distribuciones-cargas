@@ -43,6 +43,11 @@ const CALCULATORS = [
     description: 'Q = −W'
   },
   {
+    id: 'adiabatic-process',
+    title: 'Proceso adiabático',
+    description: 'Q = 0'
+  },
+  {
     id: 'mechanical-equivalent',
     title: 'Equivalente mecánico',
     description: '1 cal = 4.186 J'
@@ -129,6 +134,12 @@ export default function Thermodynamics() {
     initialVolume: 2,
     finalVolume: 4
   });
+  const [adiabatic, setAdiabatic] = useState({
+    initialPressure: 1,
+    initialVolume: 2,
+    finalVolume: 4,
+    gamma: 1.4
+  });
   const [mixture, setMixture] = useState([
     { id: 'substance-1', name: 'Sustancia 1', mass: 1, specificHeat: 4186, temperature: 80 },
     { id: 'substance-2', name: 'Sustancia 2', mass: 1, specificHeat: 4186, temperature: 20 }
@@ -154,6 +165,7 @@ export default function Thermodynamics() {
   const firstLawResult = useMemo(() => calculateFirstLaw(firstLaw), [firstLaw]);
   const idealGasResult = useMemo(() => calculateIdealGas(idealGas), [idealGas]);
   const isothermalResult = useMemo(() => calculateIsothermalProcess(isothermal), [isothermal]);
+  const adiabaticResult = useMemo(() => calculateAdiabaticProcess(adiabatic), [adiabatic]);
   const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
   const heatingCurveResult = useMemo(() => calculateHeatingCurve(heatingCurve), [heatingCurve]);
 
@@ -228,6 +240,12 @@ export default function Thermodynamics() {
               result={isothermalResult}
               onValues={setIsothermal}
             />
+          ) : calculator === 'adiabatic-process' ? (
+            <AdiabaticProcessCalculator
+              values={adiabatic}
+              result={adiabaticResult}
+              onValues={setAdiabatic}
+            />
           ) : calculator === 'thermal-equilibrium' ? (
             <ThermalEquilibriumCalculator
               substances={mixture}
@@ -259,9 +277,11 @@ export default function Thermodynamics() {
                     ? <IdealGasFormulas />
                     : calculator === 'isothermal-process'
                       ? <IsothermalProcessFormulas />
-                      : calculator === 'thermal-equilibrium'
-                        ? <ThermalEquilibriumFormulas />
-                        : <HeatingCurveFormulas />}
+                      : calculator === 'adiabatic-process'
+                        ? <AdiabaticProcessFormulas />
+                        : calculator === 'thermal-equilibrium'
+                          ? <ThermalEquilibriumFormulas />
+                          : <HeatingCurveFormulas />}
       </section>
     </>
   );
@@ -598,12 +618,129 @@ function IsothermalProcessTheoryCard() {
       <p>Para un proceso isotérmico, se concluye de la primera ley que la transferencia de energía <code>Q</code> debe ser igual al negativo del trabajo consumido en el gas; es decir, <code>Q=−W</code>.</p>
       <p>El trabajo consumido en un gas ideal durante un proceso isotérmico es</p>
       <div className="theory-main-formula"><span>W = nRT ln(<VolumeRatioFormula />)</span></div>
-      <p>(20.14).</p>
 
       <footer>
         <span>Referencia</span>
         <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
-        <small>Capítulo 20, Sección 20.6: Algunas aplicaciones de la primera ley de la termodinámica.</small>
+        <small>Capítulo 20, Sección 20.6: Algunas aplicaciones de la primera ley de la termodinámica. Ecuación (20.14).</small>
+      </footer>
+    </aside>
+  );
+}
+
+function calculateAdiabaticProcess(values) {
+  const initialPressure = Number(values.initialPressure);
+  const initialVolume = Number(values.initialVolume);
+  const finalVolume = Number(values.finalVolume);
+  const gamma = Number(values.gamma);
+  const atmosphereToPascal = 101325;
+  const literToCubicMeter = 0.001;
+
+  if (![initialPressure, initialVolume, finalVolume, gamma].every(Number.isFinite)) {
+    return { finalPressureAtm: NaN, finalPressurePa: NaN, work: NaN, internalEnergyChange: NaN, heat: 0, error: 'Completá todos los campos con valores numéricos.' };
+  }
+  if (initialPressure <= 0 || initialVolume <= 0 || finalVolume <= 0 || gamma <= 1) {
+    return { finalPressureAtm: NaN, finalPressurePa: NaN, work: NaN, internalEnergyChange: NaN, heat: 0, error: 'La presión, los volúmenes y γ deben ser positivos; γ debe ser mayor que 1.' };
+  }
+
+  const finalPressureAtm = initialPressure * (initialVolume / finalVolume) ** gamma;
+  const initialPressurePa = initialPressure * atmosphereToPascal;
+  const finalPressurePa = finalPressureAtm * atmosphereToPascal;
+  const initialVolumeCubicMeters = initialVolume * literToCubicMeter;
+  const finalVolumeCubicMeters = finalVolume * literToCubicMeter;
+  const work = (finalPressurePa * finalVolumeCubicMeters - initialPressurePa * initialVolumeCubicMeters) / (gamma - 1);
+
+  return {
+    finalPressureAtm,
+    finalPressurePa,
+    work,
+    internalEnergyChange: work,
+    heat: 0,
+    error: null
+  };
+}
+
+function AdiabaticProcessCalculator({ values, result, onValues }) {
+  const update = (patch) => onValues(current => ({ ...current, ...patch }));
+  const processType = Number(values.finalVolume) > Number(values.initialVolume)
+    ? 'Expansión adiabática'
+    : Number(values.finalVolume) < Number(values.initialVolume)
+      ? 'Compresión adiabática'
+      : 'Volumen constante';
+
+  return (
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card equilibrium-card">
+        <span className="eyebrow">TERMODINÁMICA / GAS IDEAL</span>
+        <h2>Proceso adiabático</h2>
+        <p>Calcula la presión final, el trabajo y la variación de energía interna cuando no hay intercambio de calor.</p>
+
+        <div className="temperature-input-grid sensible-heat-grid">
+          <label>
+            <span>Presión inicial P<sub>i</sub></span>
+            <input type="number" step="any" value={values.initialPressure} onChange={event => update({ initialPressure: event.target.value })} />
+            <small>atm</small>
+          </label>
+          <label>
+            <span>Volumen inicial V<sub>i</sub></span>
+            <input type="number" step="any" value={values.initialVolume} onChange={event => update({ initialVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+          <label>
+            <span>Volumen final V<sub>f</sub></span>
+            <input type="number" step="any" value={values.finalVolume} onChange={event => update({ finalVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+          <label>
+            <span>Coeficiente γ</span>
+            <input type="number" step="any" value={values.gamma} onChange={event => update({ gamma: event.target.value })} />
+            <small>sin unidad</small>
+          </label>
+        </div>
+
+        {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+        <div className="temperature-results equilibrium-result">
+          <article className="source">
+            <span>Presión final P<sub>f</sub></span>
+            <strong>{formatEnergy(result.finalPressureAtm)}</strong>
+            <small>atm</small>
+          </article>
+          <article>
+            <span>Trabajo W</span>
+            <strong>{formatEnergy(result.work)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>ΔE<sub>int</sub></span>
+            <strong>{formatEnergy(result.internalEnergyChange)}</strong>
+            <small>J · {processType}</small>
+          </article>
+        </div>
+      </div>
+      <AdiabaticProcessTheoryCard />
+    </div>
+  );
+}
+
+function AdiabaticProcessTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de proceso adiabático">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Proceso adiabático</h3>
+      <p>Un proceso adiabático es aquel durante el cual no entra ni sale energía del sistema por calor; <code>Q=0</code>.</p>
+      <p>Al aplicar la primera ley de la termodinámica a un proceso adiabático se obtiene</p>
+      <div className="theory-main-formula"><span>ΔE<sub>int</sub> = W</span></div>
+      <p>proceso adiabático.</p>
+      <p>Si un gas ideal se somete a una expansión o compresión adiabáticos, la primera ley de la termodinámica, junto con la ecuación de estado, muestra que</p>
+      <div className="theory-main-formula"><span>PV<sup>γ</sup> = constante</span></div>
+      <p>Aplicado a dos estados, esto es</p>
+      <div className="theory-main-formula"><span>P<sub>i</sub>V<sub>i</sub><sup>γ</sup> = P<sub>f</sub>V<sub>f</sub><sup>γ</sup></span></div>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.6: Algunas aplicaciones de la primera ley de la termodinámica, ecuación (20.11). Capítulo 21, Sección 21.3: Procesos adiabáticos para un gas ideal, ecuaciones (21.18) y (21.19).</small>
       </footer>
     </aside>
   );
@@ -1541,6 +1678,31 @@ function IsothermalProcessFormulas() {
           <h3>Trabajo isotérmico</h3>
           <p><code>W = n R T ln(<VolumeRatioFormula />)</code></p>
           <p><code>R = 8.314 J/(mol·K)</code></p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function AdiabaticProcessFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Proceso adiabático de un gas ideal</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Sin intercambio de calor</h3>
+          <p><code>Q = 0</code></p>
+          <p><code>ΔE<sub>int</sub> = W</code></p>
+        </article>
+        <article>
+          <h3>Relación adiabática</h3>
+          <p><code>PV<sup>γ</sup> = constante</code></p>
+          <p><code>P<sub>i</sub>V<sub>i</sub><sup>γ</sup> = P<sub>f</sub>V<sub>f</sub><sup>γ</sup></code></p>
+        </article>
+        <article>
+          <h3>Presión final</h3>
+          <p><code>P<sub>f</sub> = P<sub>i</sub>(V<sub>i</sub> / V<sub>f</sub>)<sup>γ</sup></code></p>
+          <p>Usa la misma unidad de volumen en ambos estados.</p>
         </article>
       </div>
     </section>

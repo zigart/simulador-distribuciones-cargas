@@ -143,6 +143,7 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .formula-grid p { margin: 6px 0; color: #465350; font-size: 9px; line-height: 1.45; }
 .formula-grid code { font-family: 'DM Mono', monospace; color: var(--ink); white-space: normal; }
 .formula-grid sub, .stage-row sub, .theory-card p sub, .theory-main-formula sub, .temperature-results sub, .equilibrium-head sub, .temperature-input-grid sub, .thermo-card h2 sub { font-size: .68em; line-height: 0; vertical-align: sub; }
+.formula-grid sup, .theory-main-formula sup { font-size: .68em; line-height: 0; vertical-align: super; }
 .inline-fraction { display: inline-grid; grid-template-rows: auto 1px auto; align-items: center; justify-items: center; min-width: 24px; margin: 0 2px; vertical-align: middle; line-height: 1; }
 .inline-fraction i { display: block; width: 100%; height: 1px; background: currentColor; }
 .inline-fraction span { display: block; padding: 1px 3px; }
