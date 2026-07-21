@@ -43,6 +43,11 @@ const CALCULATORS = [
     description: 'Q = −W'
   },
   {
+    id: 'isobaric-process',
+    title: 'Proceso isobárico',
+    description: 'W = −PΔV'
+  },
+  {
     id: 'adiabatic-process',
     title: 'Proceso adiabático',
     description: 'Q = 0'
@@ -134,6 +139,11 @@ export default function Thermodynamics() {
     initialVolume: 2,
     finalVolume: 4
   });
+  const [isobaric, setIsobaric] = useState({
+    pressure: 1,
+    initialVolume: 2,
+    finalVolume: 4
+  });
   const [adiabatic, setAdiabatic] = useState({
     initialPressure: 1,
     initialVolume: 2,
@@ -165,6 +175,7 @@ export default function Thermodynamics() {
   const firstLawResult = useMemo(() => calculateFirstLaw(firstLaw), [firstLaw]);
   const idealGasResult = useMemo(() => calculateIdealGas(idealGas), [idealGas]);
   const isothermalResult = useMemo(() => calculateIsothermalProcess(isothermal), [isothermal]);
+  const isobaricResult = useMemo(() => calculateIsobaricProcess(isobaric), [isobaric]);
   const adiabaticResult = useMemo(() => calculateAdiabaticProcess(adiabatic), [adiabatic]);
   const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
   const heatingCurveResult = useMemo(() => calculateHeatingCurve(heatingCurve), [heatingCurve]);
@@ -240,6 +251,12 @@ export default function Thermodynamics() {
               result={isothermalResult}
               onValues={setIsothermal}
             />
+          ) : calculator === 'isobaric-process' ? (
+            <IsobaricProcessCalculator
+              values={isobaric}
+              result={isobaricResult}
+              onValues={setIsobaric}
+            />
           ) : calculator === 'adiabatic-process' ? (
             <AdiabaticProcessCalculator
               values={adiabatic}
@@ -277,6 +294,8 @@ export default function Thermodynamics() {
                     ? <IdealGasFormulas />
                     : calculator === 'isothermal-process'
                       ? <IsothermalProcessFormulas />
+                    : calculator === 'isobaric-process'
+                      ? <IsobaricProcessFormulas />
                       : calculator === 'adiabatic-process'
                         ? <AdiabaticProcessFormulas />
                         : calculator === 'thermal-equilibrium'
@@ -623,6 +642,107 @@ function IsothermalProcessTheoryCard() {
         <span>Referencia</span>
         <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
         <small>Capítulo 20, Sección 20.6: Algunas aplicaciones de la primera ley de la termodinámica. Ecuación (20.14).</small>
+      </footer>
+    </aside>
+  );
+}
+
+function calculateIsobaricProcess(values) {
+  const pressure = Number(values.pressure);
+  const initialVolume = Number(values.initialVolume);
+  const finalVolume = Number(values.finalVolume);
+  const atmosphereToPascal = 101325;
+  const literToCubicMeter = 0.001;
+
+  if (![pressure, initialVolume, finalVolume].every(Number.isFinite)) {
+    return { work: NaN, deltaVolume: NaN, error: 'Completá todos los campos con valores numéricos.' };
+  }
+  if (pressure <= 0 || initialVolume <= 0 || finalVolume <= 0) {
+    return { work: NaN, deltaVolume: NaN, error: 'La presión y los volúmenes deben ser positivos.' };
+  }
+
+  const deltaVolume = finalVolume - initialVolume;
+  const work = -(pressure * atmosphereToPascal) * (deltaVolume * literToCubicMeter);
+
+  return {
+    work,
+    deltaVolume,
+    error: null
+  };
+}
+
+function IsobaricProcessCalculator({ values, result, onValues }) {
+  const update = (patch) => onValues(current => ({ ...current, ...patch }));
+  const processType = Number(values.finalVolume) > Number(values.initialVolume)
+    ? 'Expansión isobárica'
+    : Number(values.finalVolume) < Number(values.initialVolume)
+      ? 'Compresión isobárica'
+      : 'Volumen constante';
+
+  return (
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card">
+        <span className="eyebrow">TERMODINÁMICA / PRESIÓN CONSTANTE</span>
+        <h2>Proceso isobárico</h2>
+        <p>Calcula el trabajo consumido en el gas cuando cambia su volumen a presión constante.</p>
+
+        <div className="temperature-input-grid sensible-heat-grid">
+          <label>
+            <span>Presión P</span>
+            <input type="number" step="any" value={values.pressure} onChange={event => update({ pressure: event.target.value })} />
+            <small>atm</small>
+          </label>
+          <label>
+            <span>Volumen inicial V<sub>i</sub></span>
+            <input type="number" step="any" value={values.initialVolume} onChange={event => update({ initialVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+          <label>
+            <span>Volumen final V<sub>f</sub></span>
+            <input type="number" step="any" value={values.finalVolume} onChange={event => update({ finalVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+        </div>
+
+        {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+        <div className="temperature-results sensible-heat-result">
+          <article className="source">
+            <span>Trabajo W</span>
+            <strong>{formatEnergy(result.work)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>ΔV</span>
+            <strong>{formatEnergy(result.deltaVolume)}</strong>
+            <small>L</small>
+          </article>
+          <article>
+            <span>Proceso</span>
+            <strong className="result-note">{processType}</strong>
+            <small>presión constante</small>
+          </article>
+        </div>
+      </div>
+      <IsobaricProcessTheoryCard />
+    </div>
+  );
+}
+
+function IsobaricProcessTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de proceso isobárico">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Proceso isobárico</h3>
+      <p>Un proceso que se presenta a presión constante se llama proceso isobárico.</p>
+      <p>El trabajo consumido en el gas en un proceso isobárico es simplemente</p>
+      <div className="theory-main-formula"><span>W = −P(V<sub>f</sub> − V<sub>i</sub>)</span></div>
+      <p>donde <code>P</code> es la presión constante del gas durante el proceso.</p>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.6: Algunas aplicaciones de la primera ley de la termodinámica. Ecuación (20.12).</small>
       </footer>
     </aside>
   );
@@ -1678,6 +1798,31 @@ function IsothermalProcessFormulas() {
           <h3>Trabajo isotérmico</h3>
           <p><code>W = n R T ln(<VolumeRatioFormula />)</code></p>
           <p><code>R = 8.314 J/(mol·K)</code></p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function IsobaricProcessFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Proceso isobárico a presión constante</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Presión constante</h3>
+          <p><code>P = constante</code></p>
+          <p>El volumen puede cambiar mientras la presión se mantiene fija.</p>
+        </article>
+        <article>
+          <h3>Cambio de volumen</h3>
+          <p><code>ΔV = V<sub>f</sub> − V<sub>i</sub></code></p>
+          <p>Usa la misma unidad de volumen en ambos estados.</p>
+        </article>
+        <article>
+          <h3>Trabajo</h3>
+          <p><code>W = −P(V<sub>f</sub> − V<sub>i</sub>)</code></p>
+          <p>Trabajo consumido en el gas.</p>
         </article>
       </div>
     </section>
