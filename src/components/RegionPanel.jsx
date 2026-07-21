@@ -1,5 +1,5 @@
 import { GEOMETRIES } from '../physics/constants.js';
-import { chargeFmtWithUnit, fmt, materialName, profileName } from '../physics/format.js';
+import { chargeFmtWithUnit, fmt, materialName } from '../physics/format.js';
 import { sortedRegions } from '../physics/calculations.js';
 
 export default function RegionPanel({ geometry, labels, regions, selectedId, chargeUnit, onSelect, onClear, onAdd, onGeometryRequest }) {
@@ -37,7 +37,7 @@ export default function RegionPanel({ geometry, labels, regions, selectedId, cha
             <i className="region-swatch" style={{ background: region.color }}></i>
             <div className="region-copy">
               <strong>{index + 1}. {region.name}</strong>
-              <span>{fmt(region.inner, 2)} — {fmt(region.outer, 2)} m · {region.material === 'insulator' ? profileName(region.profile) : materialName(region.material)}</span>
+              <span>{fmt(region.inner, 2)} — {fmt(region.outer, 2)} m · {region.material === 'insulator' ? 'aislante uniforme' : materialName(region.material)}</span>
             </div>
             <span className="region-charge">{chargeFmtWithUnit(region.charge, geometry, chargeUnit)}</span>
           </article>

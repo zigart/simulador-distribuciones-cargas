@@ -34,5 +34,4 @@ export function labels(geometry) {
   return { shape: 'CILÍNDRICA', dim: 'r', inner: 'Radio interior', outer: 'Radio exterior', total: 'Carga por metro λ', totalUnit: 'C/m' };
 }
 
-export const profileName = (profile) => ({ constant: 'ρ constante', linear: 'ρ = A r', inverse: 'ρ = B / r' })[profile] || 'ρ constante';
 export const materialName = (material) => ({ insulator: 'aislante', conductor: 'conductor', vacuum: 'vacío' })[material] || material;

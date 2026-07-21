@@ -58,13 +58,10 @@ export default function App() {
     setRegions(current => current.map(region => {
       if (region.id !== selected.id) return region;
       const next = { ...region, ...patch };
-      if (patch.material === 'conductor') next.profile = 'constant';
+      if (patch.material && patch.material !== 'vacuum') next.profile = 'constant';
       if (patch.material === 'vacuum') {
         next.coefficient = 0;
         next.charge = 0;
-      }
-      if (patch.profile && next.material !== 'vacuum' && chargeMode === 'total') {
-        next.coefficient = next.charge / Math.max(measure(next, geometry), 1e-9);
       }
       return next;
     }));
@@ -73,7 +70,7 @@ export default function App() {
   function changeMaterial(material) {
     if (!selected) return;
     const previousCharge = selected.charge;
-    const proposal = { ...selected, material, profile: material === 'conductor' ? 'constant' : selected.profile };
+    const proposal = { ...selected, material, profile: 'constant' };
     if (material === 'vacuum') proposal.coefficient = 0;
     const error = validateRegion(proposal, normalizedRegions);
     if (error) {
@@ -82,7 +79,7 @@ export default function App() {
     }
     setRegions(current => current.map(region => {
       if (region.id !== selected.id) return region;
-      const next = { ...region, material, profile: proposal.profile };
+      const next = { ...region, material, profile: 'constant' };
       if (material === 'vacuum') {
         next.coefficient = 0;
         next.charge = 0;

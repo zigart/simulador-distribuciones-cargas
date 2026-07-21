@@ -1,5 +1,5 @@
 import { REGION_TYPES } from '../physics/constants.js';
-import { chargeFmtWithUnit, profileName, sci } from '../physics/format.js';
+import { chargeFmtWithUnit, sci } from '../physics/format.js';
 import { coefficientUnit, measure, regionDensity, validateRegion } from '../physics/calculations.js';
 
 export default function RegionEditor({
@@ -20,7 +20,6 @@ export default function RegionEditor({
   const disabled = !selected;
   const validation = selected ? validateRegion(selected, regions) : '';
   const isDensity = chargeMode === 'density';
-  const isSurfaceOrVacuum = selected?.material === 'vacuum' || selected?.material === 'conductor';
   const physicalValue = selected ? (isDensity ? selected.coefficient : selected.charge) : 0;
   const chargeUnits = geometry === 'cylinder'
     ? [{ label: 'C/m', value: 1 }, { label: 'μC/m', value: 0.000001 }, { label: 'nC/m', value: 1e-9 }]
@@ -74,12 +73,6 @@ export default function RegionEditor({
             <button type="button" disabled={disabled} className={chargeMode === 'total' ? 'active' : ''} onClick={() => onChargeMode('total')}>{labels.total}</button>
             <button type="button" disabled={disabled} className={chargeMode === 'density' ? 'active' : ''} onClick={() => onChargeMode('density')}>Densidad</button>
           </div>
-          <label className="field-label profile-label" htmlFor="densityProfile">Perfil radial</label>
-          <select className="profile-select" id="densityProfile" disabled={disabled || isSurfaceOrVacuum} value={selected?.profile || 'constant'} onChange={e => onChange({ profile: e.target.value })}>
-            <option value="constant">Constante</option>
-            <option value="linear">rho = A r</option>
-            <option value="inverse">rho = B / r</option>
-          </select>
           <label className="charge-input">
             <input type="number" step="any" disabled={disabled || selected?.material === 'vacuum'} value={selected?.material === 'vacuum' ? 0 : Number((physicalValue / displayUnit).toPrecision(7))} onChange={e => updateCharge(e.target.value, displayUnit)} />
             <select
@@ -92,7 +85,7 @@ export default function RegionEditor({
             </select>
           </label>
           <div className="calculated-row">
-            <span>{isDensity ? labels.total : selected?.material === 'conductor' ? 'σ calculada' : `${profileName(selected?.profile)} · coeficiente`}</span>
+            <span>{isDensity ? labels.total : selected?.material === 'conductor' ? 'σ calculada' : 'ρ₀ uniforme'}</span>
             <strong>{selected ? (isDensity ? chargeFmtWithUnit(selected.charge, geometry, chargeUnit) : `${sci(regionDensity(selected))} ${coefficientUnit(selected)}`) : `${regions.length} regiones`}</strong>
           </div>
           <div className="polarity-bar"><span>−</span><div><i style={{ left: `${polarity}%` }}></i></div><span>＋</span></div>

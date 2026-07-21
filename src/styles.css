@@ -113,8 +113,6 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .charge-input { display: flex; background: white; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
 .charge-input input { border: 0; padding: 10px; min-width: 0; flex: 1; outline: 0; font: 11px 'DM Mono', monospace; }
 .charge-input select { border: 0; border-left: 1px solid var(--line); background: white; padding: 0 6px; font-size: 9px; outline: 0; }
-.profile-label { margin: 5px 0 6px; }
-.profile-select { width: 100%; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 7px; background: white; padding: 8px; font-size: 9px; outline: none; }
 .calculated-row { display: flex; justify-content: space-between; margin-top: 9px; color: var(--muted); font-size: 8px; }
 .calculated-row strong { color: var(--ink); font: 500 8px 'DM Mono', monospace; }
 .polarity-bar { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 9px; margin-top: 12px; }

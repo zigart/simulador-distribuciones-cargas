@@ -10,12 +10,8 @@ export function measure(region, geometry, upper = region.outer) {
     return 2 * Math.PI * region.outer;
   }
   if (geometry === 'sphere') {
-    if (region.profile === 'linear') return Math.PI * (b ** 4 - a ** 4);
-    if (region.profile === 'inverse') return 2 * Math.PI * (b ** 2 - a ** 2);
     return 4 / 3 * Math.PI * (b ** 3 - a ** 3);
   }
-  if (region.profile === 'linear') return 2 * Math.PI / 3 * (b ** 3 - a ** 3);
-  if (region.profile === 'inverse') return 2 * Math.PI * (b - a);
   return Math.PI * (b ** 2 - a ** 2);
 }
 
@@ -26,15 +22,13 @@ export function refreshRegionCharge(region, geometry) {
     next.coefficient = 0;
     return next;
   }
-  if (next.material === 'conductor') next.profile = 'constant';
+  next.profile = 'constant';
   next.charge = next.coefficient * Math.max(measure(next, geometry), EPS);
   return next;
 }
 
 export function coefficientUnit(region) {
   if (region.material === 'conductor') return 'C/m²';
-  if (region.profile === 'linear') return 'C/m⁴';
-  if (region.profile === 'inverse') return 'C/m²';
   return 'C/m³';
 }
 
@@ -55,7 +49,7 @@ function sphericalContribution(region, point, geometry) {
     const factor = K * region.charge / d ** 3;
     return { x: factor * point.x, y: factor * point.y, z: factor * point.z };
   }
-  if (region.profile === 'constant' && region.inner <= EPS && d <= region.outer) {
+  if (region.inner <= EPS && d <= region.outer) {
     const factor = K * region.charge / Math.max(region.outer ** 3, EPS);
     return { x: factor * point.x, y: factor * point.y, z: factor * point.z };
   }
@@ -72,7 +66,7 @@ function cylindricalContribution(region, point, geometry) {
     const factor = 2 * K * region.charge / r ** 2;
     return { x: factor * point.x, y: factor * point.y, z: 0 };
   }
-  if (region.profile === 'constant' && region.inner <= EPS && r <= region.outer) {
+  if (region.inner <= EPS && r <= region.outer) {
     const factor = 2 * K * region.charge / Math.max(region.outer ** 2, EPS);
     return { x: factor * point.x, y: factor * point.y, z: 0 };
   }

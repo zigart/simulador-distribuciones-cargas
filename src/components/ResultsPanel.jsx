@@ -41,14 +41,14 @@ export default function ResultsPanel({ state, onRadius, contributionsCollapsed, 
 function FormulaPanel() {
   return (
     <section className="formula-panel" aria-label="Fórmulas utilizadas">
-      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Referencia del apéndice y extensiones del simulador</small></div>
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Referencia del apéndice y modelo uniforme del simulador</small></div>
       <div className="formula-grid">
         <article><h3>Base</h3><p><code>k = 1 / (4π ε₀) = 8.9875517923 × 10⁹ N·m²/C²</code></p><p><code>E⃗ total(P) = Σ E⃗ᵢ(P)</code></p></article>
         <article><h3>Esfera sólida</h3><p><code>E_r = kQ/r²</code> para <code>r ≥ R</code></p><p><code>E_r = kQr/R³</code> para <code>r ≤ R</code></p></article>
         <article><h3>Corteza esférica</h3><p><code>E_r = kQ/r²</code> para <code>r &gt; R</code></p><p><code>E_r = 0</code> para <code>r &lt; R</code></p></article>
         <article><h3>Cilindro sólido</h3><p><code>E_r = ρR²/(2ε₀r) = λ/(2π ε₀ r)</code> para <code>r ≥ R</code></p><p><code>E_r = ρr/(2ε₀) = λr/(2π ε₀R²)</code> para <code>r ≤ R</code></p></article>
         <article><h3>Corteza cilíndrica</h3><p><code>E_r = 0</code> para <code>r &lt; R</code></p><p><code>E_r = σR/(ε₀r) = λ/(2π ε₀ r)</code> para <code>r &gt; R</code></p></article>
-        <article><h3>Extensiones</h3><p><code>ρ(r)=A r ⇒ Q_enc = πA(b⁴-a⁴)</code></p><p><code>ρ(r)=B/r ⇒ Q_enc = 2πB(b²-a²)</code></p></article>
+        <article><h3>Aislante uniforme</h3><p><code>ρ(r) = ρ₀</code></p><p><code>Q = ρ₀V</code> o <code>λ = ρ₀(V/L)</code></p></article>
       </div>
     </section>
   );
