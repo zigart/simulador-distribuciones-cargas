@@ -35,7 +35,7 @@ const CALCULATORS = [
   {
     id: 'first-law',
     title: 'Primer principio',
-    description: 'ΔEᵢₙₜ = Q + W'
+    description: 'ΔU = Q + W'
   },
   {
     id: 'isothermal-process',
@@ -123,8 +123,8 @@ export default function Thermodynamics() {
   const [latentMass, setLatentMass] = useState(1);
   const [latentHeat, setLatentHeat] = useState(334000);
   const [firstLaw, setFirstLaw] = useState({
-    heat: 500,
-    work: 200
+    heat: 1200,
+    work: -350
   });
   const [idealGas, setIdealGas] = useState({
     initialVolume: 2,
@@ -365,8 +365,8 @@ function FirstLawCalculator({ values, result, onValues }) {
     <div className="thermo-content-with-theory">
       <div className="thermo-card">
         <span className="eyebrow">TERMODINÁMICA / PRIMER PRINCIPIO</span>
-        <h2>Calcular ΔE<sub>int</sub></h2>
-        <p>Relaciona el calor transferido al sistema, el trabajo consumido en el sistema y la variación de energía interna.</p>
+        <h2>Calcular ΔU</h2>
+        <p>Relaciona el calor transferido al sistema, el trabajo realizado sobre el sistema y la variación de energía interna.</p>
 
         <div className="temperature-input-grid latent-heat-grid">
           <label>
@@ -377,7 +377,7 @@ function FirstLawCalculator({ values, result, onValues }) {
           <label>
             <span>Trabajo W</span>
             <input type="number" step="any" value={values.work} onChange={event => update({ work: event.target.value })} />
-            <small>J · consumido en el sistema</small>
+            <small>J · realizado sobre el sistema</small>
           </label>
         </div>
 
@@ -385,19 +385,14 @@ function FirstLawCalculator({ values, result, onValues }) {
 
         <div className="temperature-results latent-heat-result">
           <article className="source">
-            <span>ΔU = ΔE<sub>int</sub></span>
+            <span>ΔU</span>
             <strong>{formatEnergy(result.internalEnergyChange)}</strong>
             <small>J</small>
           </article>
           <article>
-            <span>Equivalente</span>
-            <strong>{formatEnergy(result.internalEnergyChange / 1000)}</strong>
-            <small>kJ</small>
-          </article>
-          <article>
             <span>Interpretación</span>
             <strong className="result-note">{interpretation}</strong>
-            <small>según el signo de ΔE<sub>int</sub></small>
+            <small>según el signo de ΔU</small>
           </article>
         </div>
       </div>
@@ -412,13 +407,13 @@ function FirstLawTheoryCard() {
       <span className="eyebrow">TEORÍA</span>
       <h3>Primera ley de la termodinámica</h3>
       <p>La primera ley de la termodinámica establece que, cuando un sistema se somete a un cambio de un estado a otro, el cambio en su energía interna es</p>
-      <div className="theory-main-formula"><span>ΔE<sub>int</sub> = Q + W</span></div>
-      <p>donde <code>Q</code> es la energía transferida al sistema por calor y <code>W</code> es el trabajo consumido en el sistema.</p>
+      <div className="theory-main-formula"><span>ΔU = Q + W</span></div>
+      <p>donde <code>Q</code> es positivo si se añade calor al sistema y <code>W</code> es positivo si se realiza trabajo sobre el sistema.</p>
 
       <footer>
         <span>Referencia</span>
-        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
-        <small>Capítulo 20, Sección 20.5: Primera ley de la termodinámica.</small>
+        <strong>Tipler, Física para la ciencia y la tecnología, Volumen 1.</strong>
+        <small>Capítulo 18, Sección 18.3: El experimento de Joule y el primer principio de la termodinámica, ecuación (18.10).</small>
       </footer>
     </aside>
   );
@@ -508,11 +503,6 @@ function IdealGasCalculator({ values, result, onValues }) {
             <strong>{formatEnergy(result.moles)}</strong>
             <small>mol</small>
           </article>
-          <article>
-            <span>Temperaturas absolutas</span>
-            <strong className="result-note">{formatEnergy(result.initialTemperatureKelvin)} K → {formatEnergy(result.finalTemperatureKelvin)} K</strong>
-            <small>T = T<sub>C</sub> + 273.15</small>
-          </article>
         </div>
       </div>
       <IdealGasTheoryCard />
@@ -524,15 +514,15 @@ function IdealGasTheoryCard() {
   return (
     <aside className="theory-card" aria-label="Teoría de gas ideal">
       <span className="eyebrow">TEORÍA</span>
-      <h3>Descripción macroscópica de un gas ideal</h3>
-      <p>Un gas ideal es aquel para el cual <code>PV/nT</code> es constante. Un gas ideal se describe mediante la ecuación de estado,</p>
+      <h3>Ley de los gases ideales</h3>
+      <p>Se define un <strong>gas ideal</strong> como aquel para el que <code>PV/(nT)</code> es constante a todas las presiones. En este caso, la presión, el volumen y la temperatura están relacionados por</p>
       <code className="theory-main-formula">PV = nRT</code>
       <p>donde <code>n</code> es igual al número de moles del gas, <code>P</code> es su presión, <code>V</code> su volumen, <code>R</code> la constante universal de los gases (8.314 J/mol K) y <code>T</code> la temperatura absoluta del gas. Un gas real se comporta casi como un gas ideal si tiene una densidad baja.</p>
 
       <footer>
         <span>Referencia</span>
-        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
-        <small>Capítulo 19, Sección 19.5: Descripción macroscópica de un gas ideal.</small>
+        <strong>Tipler, Física para la ciencia y la tecnología, Volumen 1.</strong>
+        <small>Capítulo 17, Sección 17.4: Ley de los gases ideales.</small>
       </footer>
     </aside>
   );
@@ -1455,11 +1445,6 @@ function HeatingCurveCalculator({ values, result, onValues }) {
             <small>J</small>
           </article>
           <article>
-            <span>Equivalente</span>
-            <strong>{formatEnergy(result.total / 1000)}</strong>
-            <small>kJ</small>
-          </article>
-          <article>
             <span>Interpretación</span>
             <strong className="result-note">{totalSense}</strong>
             <small>Σ de todas las etapas</small>
@@ -1598,13 +1583,13 @@ function HeatingCurveTheoryCard() {
     <aside className="theory-card" aria-label="Teoría de curva de calentamiento">
       <span className="eyebrow">TEORÍA</span>
       <h3>Curva de calentamiento</h3>
-      <p>Para entender el papel del calor latente en los cambios de fase, considere la energía requerida para convertir un cubo de hielo de 1.00 g de −30.0 °C a vapor a 120.0 °C. La figura 20.2 indica los resultados experimentales obtenidos cuando al cubo se le agrega gradualmente energía.</p>
-      <p>La cantidad total de energía que se debe agregar... es la suma de los resultados de las cinco partes de la curva.</p>
+      <p>Esta calculadora representa una curva de calentamiento análoga a la estudiada por Serway y Jewett: a medida que se agrega o se extrae energía, la temperatura cambia en los tramos de una sola fase y permanece constante durante los cambios de fase.</p>
+      <p>La cantidad total de energía es la suma de los aportes de cada tramo: calentar o enfriar una fase, fundir o solidificar, vaporizar o condensar, según la transición seleccionada.</p>
 
       <footer>
         <span>Referencia</span>
         <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
-        <small>Capítulo 20, Sección 20.3: Calor latente. Figura 20.2.</small>
+        <small>Capítulo 20, Sección 20.3: Calor latente. La explicación se basa en la curva de calentamiento presentada en la Figura 20.2.</small>
       </footer>
     </aside>
   );
@@ -1736,7 +1721,7 @@ function FirstLawFormulas() {
       <div className="formula-grid">
         <article>
           <h3>Energía interna</h3>
-          <p><code>ΔE<sub>int</sub> = Q + W</code></p>
+          <p><code>ΔU = Q + W</code></p>
           <p>Cambio de energía interna del sistema.</p>
         </article>
         <article>
@@ -1746,8 +1731,8 @@ function FirstLawFormulas() {
         </article>
         <article>
           <h3>Trabajo</h3>
-          <p><code>W</code>: trabajo consumido en el sistema.</p>
-          <p>Usa la convención de signos del libro.</p>
+          <p><code>W</code>: trabajo realizado sobre el sistema.</p>
+          <p>Entra positivo cuando se transfiere energía al sistema mediante trabajo.</p>
         </article>
       </div>
     </section>
