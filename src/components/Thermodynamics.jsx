@@ -38,6 +38,11 @@ const CALCULATORS = [
     description: 'ΔEᵢₙₜ = Q + W'
   },
   {
+    id: 'isothermal-process',
+    title: 'Proceso isotérmico',
+    description: 'Q = −W'
+  },
+  {
     id: 'mechanical-equivalent',
     title: 'Equivalente mecánico',
     description: '1 cal = 4.186 J'
@@ -81,6 +86,16 @@ function HeatingStageFormula({ formula }) {
   return <>{formula}</>;
 }
 
+function VolumeRatioFormula() {
+  return (
+    <span className="inline-fraction">
+      <span>V<sub>f</sub></span>
+      <i></i>
+      <span>V<sub>i</sub></span>
+    </span>
+  );
+}
+
 export default function Thermodynamics() {
   const [calculator, setCalculator] = useState('temperature');
   const [temperature, setTemperature] = useState(25);
@@ -108,6 +123,12 @@ export default function Thermodynamics() {
     initialTemperature: 30,
     finalTemperature: 60
   });
+  const [isothermal, setIsothermal] = useState({
+    moles: 1,
+    temperature: 300,
+    initialVolume: 2,
+    finalVolume: 4
+  });
   const [mixture, setMixture] = useState([
     { id: 'substance-1', name: 'Sustancia 1', mass: 1, specificHeat: 4186, temperature: 80 },
     { id: 'substance-2', name: 'Sustancia 2', mass: 1, specificHeat: 4186, temperature: 20 }
@@ -132,6 +153,7 @@ export default function Thermodynamics() {
   const latentHeatTotal = useMemo(() => Number(latentMass) * Number(latentHeat), [latentMass, latentHeat]);
   const firstLawResult = useMemo(() => calculateFirstLaw(firstLaw), [firstLaw]);
   const idealGasResult = useMemo(() => calculateIdealGas(idealGas), [idealGas]);
+  const isothermalResult = useMemo(() => calculateIsothermalProcess(isothermal), [isothermal]);
   const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
   const heatingCurveResult = useMemo(() => calculateHeatingCurve(heatingCurve), [heatingCurve]);
 
@@ -200,6 +222,12 @@ export default function Thermodynamics() {
               result={idealGasResult}
               onValues={setIdealGas}
             />
+          ) : calculator === 'isothermal-process' ? (
+            <IsothermalProcessCalculator
+              values={isothermal}
+              result={isothermalResult}
+              onValues={setIsothermal}
+            />
           ) : calculator === 'thermal-equilibrium' ? (
             <ThermalEquilibriumCalculator
               substances={mixture}
@@ -229,9 +257,11 @@ export default function Thermodynamics() {
                   ? <FirstLawFormulas />
                   : calculator === 'ideal-gas'
                     ? <IdealGasFormulas />
-                    : calculator === 'thermal-equilibrium'
-                      ? <ThermalEquilibriumFormulas />
-                      : <HeatingCurveFormulas />}
+                    : calculator === 'isothermal-process'
+                      ? <IsothermalProcessFormulas />
+                      : calculator === 'thermal-equilibrium'
+                        ? <ThermalEquilibriumFormulas />
+                        : <HeatingCurveFormulas />}
       </section>
     </>
   );
@@ -469,6 +499,116 @@ function IdealGasTheoryCard() {
   );
 }
 
+function calculateIsothermalProcess(values) {
+  const moles = Number(values.moles);
+  const temperature = Number(values.temperature);
+  const initialVolume = Number(values.initialVolume);
+  const finalVolume = Number(values.finalVolume);
+  const gasConstant = 8.314;
+
+  if (![moles, temperature, initialVolume, finalVolume].every(Number.isFinite)) {
+    return { work: NaN, heat: NaN, internalEnergyChange: NaN, volumeRatio: NaN, error: 'Completá todos los campos con valores numéricos.' };
+  }
+  if (moles <= 0 || temperature <= 0 || initialVolume <= 0 || finalVolume <= 0) {
+    return { work: NaN, heat: NaN, internalEnergyChange: NaN, volumeRatio: NaN, error: 'Los moles, la temperatura absoluta y los volúmenes deben ser positivos.' };
+  }
+
+  const volumeRatio = finalVolume / initialVolume;
+  const work = moles * gasConstant * temperature * Math.log(volumeRatio);
+
+  return {
+    work,
+    heat: -work,
+    internalEnergyChange: 0,
+    volumeRatio,
+    error: null
+  };
+}
+
+function IsothermalProcessCalculator({ values, result, onValues }) {
+  const update = (patch) => onValues(current => ({ ...current, ...patch }));
+  const processType = Number(values.finalVolume) > Number(values.initialVolume)
+    ? 'Expansión isotérmica'
+    : Number(values.finalVolume) < Number(values.initialVolume)
+      ? 'Compresión isotérmica'
+      : 'Volumen constante';
+
+  return (
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card equilibrium-card">
+        <span className="eyebrow">TERMODINÁMICA / GAS IDEAL</span>
+        <h2>Proceso isotérmico</h2>
+        <p>Calcula trabajo y calor para un gas ideal que cambia de volumen a temperatura constante.</p>
+
+        <div className="temperature-input-grid sensible-heat-grid">
+          <label>
+            <span>Moles n</span>
+            <input type="number" step="any" value={values.moles} onChange={event => update({ moles: event.target.value })} />
+            <small>mol</small>
+          </label>
+          <label>
+            <span>Temperatura T</span>
+            <input type="number" step="any" value={values.temperature} onChange={event => update({ temperature: event.target.value })} />
+            <small>K</small>
+          </label>
+          <label>
+            <span>Volumen inicial V<sub>i</sub></span>
+            <input type="number" step="any" value={values.initialVolume} onChange={event => update({ initialVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+          <label>
+            <span>Volumen final V<sub>f</sub></span>
+            <input type="number" step="any" value={values.finalVolume} onChange={event => update({ finalVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+        </div>
+
+        {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+        <div className="temperature-results equilibrium-result">
+          <article className="source">
+            <span>Trabajo W</span>
+            <strong>{formatEnergy(result.work)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>Calor Q</span>
+            <strong>{formatEnergy(result.heat)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>ΔE<sub>int</sub></span>
+            <strong>{formatEnergy(result.internalEnergyChange)}</strong>
+            <small>J · {processType}</small>
+          </article>
+        </div>
+      </div>
+      <IsothermalProcessTheoryCard />
+    </div>
+  );
+}
+
+function IsothermalProcessTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de proceso isotérmico">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Proceso isotérmico</h3>
+      <p>Un proceso que se presenta a temperatura constante se llama proceso isotérmico.</p>
+      <p>En un proceso isotérmico que involucra un gas ideal, ΔE<sub>int</sub> =0.</p>
+      <p>Para un proceso isotérmico, se concluye de la primera ley que la transferencia de energía <code>Q</code> debe ser igual al negativo del trabajo consumido en el gas; es decir, <code>Q=−W</code>.</p>
+      <p>El trabajo consumido en un gas ideal durante un proceso isotérmico es</p>
+      <div className="theory-main-formula"><span>W = nRT ln(<VolumeRatioFormula />)</span></div>
+      <p>(20.14).</p>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.6: Algunas aplicaciones de la primera ley de la termodinámica.</small>
+      </footer>
+    </aside>
+  );
+}
+
 function calculateMechanicalEquivalent(values) {
   const mass = Number(values.mass);
   const velocity = Number(values.velocity);
@@ -569,10 +709,11 @@ function MechanicalEquivalentTheoryCard() {
     <aside className="theory-card" aria-label="Teoría del equivalente mecánico del calor">
       <span className="eyebrow">TEORÍA</span>
       <h3>Equivalente mecánico del calor</h3>
-      <p>"Joule encontró que la pérdida en energía mecánica es proporcional al producto de la masa del agua y el aumento en la temperatura del agua. La constante de proporcionalidad que encontró era de aproximadamente 4.18 J/g °C. Por lo tanto, 4.18 J de energía mecánica elevan la temperatura de 1 g de agua en 1°C. Mediciones más precisas tomadas más tarde demostraron que la proporcionalidad era de 4.186 J/g °C cuando la temperatura del agua se elevaba de 14.5°C a 15.5°C. Aquí se adopta este valor de “caloría de 15 grados”:</p>
+      <p>Joule encontró que la pérdida en energía mecánica es proporcional al producto de la masa del agua y el aumento en la temperatura del agua.</p>
+      <p>La constante de proporcionalidad que encontró era de aproximadamente 4.18 J/g °C. Por lo tanto, 4.18 J de energía mecánica elevan la temperatura de 1 g de agua en 1°C.</p>
+      <p>Mediciones más precisas tomadas más tarde demostraron que la proporcionalidad era de 4.186 J/g °C cuando la temperatura del agua se elevaba de 14.5°C a 15.5°C. Aquí se adopta este valor de “caloría de 15 grados”:</p>
       <code className="theory-main-formula">1 cal = 4.186 J</code>
-      <p>Esta igualdad se conoce, por razones meramente históricas, como el equivalente mecánico del calor."</p>
-
+      <p>Esta igualdad se conoce, por razones meramente históricas, como el equivalente mecánico del calor.</p>
       <code className="theory-main-formula">E mecánica = Q = m c ΔT</code>
 
       <footer>
@@ -1375,6 +1516,31 @@ function IdealGasFormulas() {
           <h3>Moles</h3>
           <p><code>PV = nRT</code></p>
           <p><code>n = P<sub>i</sub> V<sub>i</sub> / R T<sub>i</sub></code></p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function IsothermalProcessFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Proceso isotérmico de un gas ideal</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Temperatura constante</h3>
+          <p><code>ΔE<sub>int</sub> = 0</code></p>
+          <p>Para un gas ideal en un proceso isotérmico.</p>
+        </article>
+        <article>
+          <h3>Primera ley</h3>
+          <p><code>Q = −W</code></p>
+          <p>La transferencia de energía compensa el trabajo.</p>
+        </article>
+        <article>
+          <h3>Trabajo isotérmico</h3>
+          <p><code>W = n R T ln(<VolumeRatioFormula />)</code></p>
+          <p><code>R = 8.314 J/(mol·K)</code></p>
         </article>
       </div>
     </section>
