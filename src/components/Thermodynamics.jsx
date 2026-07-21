@@ -827,14 +827,14 @@ function AdiabaticProcessCalculator({ values, result, onValues }) {
             <small>atm</small>
           </article>
           <article>
-            <span>Trabajo W</span>
+            <span>W = ΔE<sub>int</sub></span>
             <strong>{formatEnergy(result.work)}</strong>
             <small>J</small>
           </article>
           <article>
-            <span>ΔE<sub>int</sub></span>
-            <strong>{formatEnergy(result.internalEnergyChange)}</strong>
-            <small>J · {processType}</small>
+            <span>Proceso</span>
+            <strong className="result-note">{processType}</strong>
+            <small>Q = 0 · ΔE<sub>int</sub> = W</small>
           </article>
         </div>
       </div>
