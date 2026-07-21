@@ -134,10 +134,10 @@ export default function Thermodynamics() {
     finalTemperature: 60
   });
   const [isothermal, setIsothermal] = useState({
-    moles: 1,
-    temperature: 300,
-    initialVolume: 2,
-    finalVolume: 4
+    moles: 2,
+    temperature: 320,
+    initialVolume: 3,
+    finalVolume: 6
   });
   const [isobaric, setIsobaric] = useState({
     pressure: 1,
