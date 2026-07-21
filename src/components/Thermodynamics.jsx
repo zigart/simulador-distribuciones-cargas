@@ -28,6 +28,11 @@ const CALCULATORS = [
     description: 'ΣQ por etapas'
   },
   {
+    id: 'ideal-gas',
+    title: 'Gas ideal',
+    description: 'PV = nRT'
+  },
+  {
     id: 'first-law',
     title: 'Primer principio',
     description: 'ΔEᵢₙₜ = Q + W'
@@ -96,6 +101,13 @@ export default function Thermodynamics() {
     heat: 500,
     work: 200
   });
+  const [idealGas, setIdealGas] = useState({
+    initialVolume: 2,
+    finalVolume: 1.5,
+    initialPressure: 1,
+    initialTemperature: 30,
+    finalTemperature: 60
+  });
   const [mixture, setMixture] = useState([
     { id: 'substance-1', name: 'Sustancia 1', mass: 1, specificHeat: 4186, temperature: 80 },
     { id: 'substance-2', name: 'Sustancia 2', mass: 1, specificHeat: 4186, temperature: 20 }
@@ -119,6 +131,7 @@ export default function Thermodynamics() {
   const sensibleHeat = useMemo(() => Number(mass) * Number(specificHeat) * Number(deltaTemperature), [mass, specificHeat, deltaTemperature]);
   const latentHeatTotal = useMemo(() => Number(latentMass) * Number(latentHeat), [latentMass, latentHeat]);
   const firstLawResult = useMemo(() => calculateFirstLaw(firstLaw), [firstLaw]);
+  const idealGasResult = useMemo(() => calculateIdealGas(idealGas), [idealGas]);
   const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
   const heatingCurveResult = useMemo(() => calculateHeatingCurve(heatingCurve), [heatingCurve]);
 
@@ -181,6 +194,12 @@ export default function Thermodynamics() {
               result={firstLawResult}
               onValues={setFirstLaw}
             />
+          ) : calculator === 'ideal-gas' ? (
+            <IdealGasCalculator
+              values={idealGas}
+              result={idealGasResult}
+              onValues={setIdealGas}
+            />
           ) : calculator === 'thermal-equilibrium' ? (
             <ThermalEquilibriumCalculator
               substances={mixture}
@@ -208,9 +227,11 @@ export default function Thermodynamics() {
                 ? <LatentHeatFormulas />
                 : calculator === 'first-law'
                   ? <FirstLawFormulas />
-                  : calculator === 'thermal-equilibrium'
-                    ? <ThermalEquilibriumFormulas />
-                    : <HeatingCurveFormulas />}
+                  : calculator === 'ideal-gas'
+                    ? <IdealGasFormulas />
+                    : calculator === 'thermal-equilibrium'
+                      ? <ThermalEquilibriumFormulas />
+                      : <HeatingCurveFormulas />}
       </section>
     </>
   );
@@ -329,6 +350,120 @@ function FirstLawTheoryCard() {
         <span>Referencia</span>
         <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
         <small>Capítulo 20, Sección 20.5: Primera ley de la termodinámica.</small>
+      </footer>
+    </aside>
+  );
+}
+
+function calculateIdealGas(values) {
+  const initialVolume = Number(values.initialVolume);
+  const finalVolume = Number(values.finalVolume);
+  const initialPressure = Number(values.initialPressure);
+  const initialTemperatureCelsius = Number(values.initialTemperature);
+  const finalTemperatureCelsius = Number(values.finalTemperature);
+  const initialTemperatureKelvin = initialTemperatureCelsius + 273.15;
+  const finalTemperatureKelvin = finalTemperatureCelsius + 273.15;
+  const gasConstant = 8.314;
+  const literToCubicMeter = 0.001;
+  const atmosphereToPascal = 101325;
+
+  if (![initialVolume, finalVolume, initialPressure, initialTemperatureCelsius, finalTemperatureCelsius].every(Number.isFinite)) {
+    return { finalPressureAtm: NaN, finalPressurePa: NaN, moles: NaN, initialTemperatureKelvin, finalTemperatureKelvin, error: 'Completá todos los campos con valores numéricos.' };
+  }
+  if (initialVolume <= 0 || finalVolume <= 0 || initialPressure <= 0 || initialTemperatureKelvin <= 0 || finalTemperatureKelvin <= 0) {
+    return { finalPressureAtm: NaN, finalPressurePa: NaN, moles: NaN, initialTemperatureKelvin, finalTemperatureKelvin, error: 'Los volúmenes, la presión y las temperaturas absolutas deben ser positivos.' };
+  }
+
+  const initialPressurePa = initialPressure * atmosphereToPascal;
+  const initialVolumeCubicMeters = initialVolume * literToCubicMeter;
+  const finalPressureAtm = (initialPressure * initialVolume * finalTemperatureKelvin) / (initialTemperatureKelvin * finalVolume);
+
+  return {
+    finalPressureAtm,
+    finalPressurePa: finalPressureAtm * atmosphereToPascal,
+    moles: (initialPressurePa * initialVolumeCubicMeters) / (gasConstant * initialTemperatureKelvin),
+    initialTemperatureKelvin,
+    finalTemperatureKelvin,
+    error: null
+  };
+}
+
+function IdealGasCalculator({ values, result, onValues }) {
+  const update = (patch) => onValues(current => ({ ...current, ...patch }));
+
+  return (
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card equilibrium-card">
+        <span className="eyebrow">GASES / ECUACIÓN DE ESTADO</span>
+        <h2>Gas ideal</h2>
+        <p>Calcula la presión final mediante la ley combinada de los gases y los moles con la ecuación de estado.</p>
+
+        <div className="temperature-input-grid heating-curve-grid">
+          <label>
+            <span>Volumen inicial V<sub>i</sub></span>
+            <input type="number" step="any" value={values.initialVolume} onChange={event => update({ initialVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+          <label>
+            <span>Presión inicial P<sub>i</sub></span>
+            <input type="number" step="any" value={values.initialPressure} onChange={event => update({ initialPressure: event.target.value })} />
+            <small>atm</small>
+          </label>
+          <label>
+            <span>Temperatura inicial T<sub>i</sub></span>
+            <input type="number" step="any" value={values.initialTemperature} onChange={event => update({ initialTemperature: event.target.value })} />
+            <small>°C</small>
+          </label>
+          <label>
+            <span>Volumen final V<sub>f</sub></span>
+            <input type="number" step="any" value={values.finalVolume} onChange={event => update({ finalVolume: event.target.value })} />
+            <small>L</small>
+          </label>
+          <label>
+            <span>Temperatura final T<sub>f</sub></span>
+            <input type="number" step="any" value={values.finalTemperature} onChange={event => update({ finalTemperature: event.target.value })} />
+            <small>°C</small>
+          </label>
+        </div>
+
+        {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+        <div className="temperature-results equilibrium-result">
+          <article className="source">
+            <span>Presión final P<sub>f</sub></span>
+            <strong>{formatEnergy(result.finalPressureAtm)}</strong>
+            <small>atm</small>
+          </article>
+          <article>
+            <span>Moles n</span>
+            <strong>{formatEnergy(result.moles)}</strong>
+            <small>mol</small>
+          </article>
+          <article>
+            <span>Temperaturas absolutas</span>
+            <strong className="result-note">{formatEnergy(result.initialTemperatureKelvin)} K → {formatEnergy(result.finalTemperatureKelvin)} K</strong>
+            <small>T = T<sub>C</sub> + 273.15</small>
+          </article>
+        </div>
+      </div>
+      <IdealGasTheoryCard />
+    </div>
+  );
+}
+
+function IdealGasTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de gas ideal">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Descripción macroscópica de un gas ideal</h3>
+      <p>Un gas ideal es aquel para el cual <code>PV/nT</code> es constante. Un gas ideal se describe mediante la ecuación de estado,</p>
+      <code className="theory-main-formula">PV = nRT</code>
+      <p>donde <code>n</code> es igual al número de moles del gas, <code>P</code> es su presión, <code>V</code> su volumen, <code>R</code> la constante universal de los gases (8.314 J/mol K) y <code>T</code> la temperatura absoluta del gas. Un gas real se comporta casi como un gas ideal si tiene una densidad baja.</p>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 19, Sección 19.5: Descripción macroscópica de un gas ideal.</small>
       </footer>
     </aside>
   );
@@ -1215,6 +1350,31 @@ function FirstLawFormulas() {
           <h3>Trabajo</h3>
           <p><code>W</code>: trabajo consumido en el sistema.</p>
           <p>Usa la convención de signos del libro.</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function IdealGasFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Descripción macroscópica de un gas ideal</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Temperatura absoluta</h3>
+          <p><code>T = T<sub>C</sub> + 273.15</code></p>
+          <p>Las ecuaciones de gases usan siempre Kelvin.</p>
+        </article>
+        <article>
+          <h3>Presión final</h3>
+          <p><code>P<sub>f</sub> = P<sub>i</sub> V<sub>i</sub> T<sub>f</sub> / T<sub>i</sub> V<sub>f</sub></code></p>
+          <p>Despejada de la ley combinada de los gases.</p>
+        </article>
+        <article>
+          <h3>Moles</h3>
+          <p><code>PV = nRT</code></p>
+          <p><code>n = P<sub>i</sub> V<sub>i</sub> / R T<sub>i</sub></code></p>
         </article>
       </div>
     </section>
