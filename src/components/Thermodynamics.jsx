@@ -15,7 +15,7 @@ const CALCULATORS = [
   {
     id: 'latent-heat',
     title: 'Calor latente',
-    description: 'Q = m L'
+    description: 'Q = ±mL'
   },
   {
     id: 'thermal-equilibrium',
@@ -42,6 +42,16 @@ function formatEnergy(value) {
   return value.toLocaleString('es-AR', {
     maximumFractionDigits: 6,
     minimumFractionDigits: Number.isInteger(value) ? 0 : 2
+  });
+}
+
+function formatCompactEnergy(value) {
+  if (!Number.isFinite(value)) return '—';
+  const absValue = Math.abs(value);
+  if (absValue >= 1000000) return `${(value / 1000000).toLocaleString('es-AR', { maximumFractionDigits: 2 })}M`;
+  if (absValue >= 10000) return `${(value / 1000).toLocaleString('es-AR', { maximumFractionDigits: 0 })}k`;
+  return value.toLocaleString('es-AR', {
+    maximumFractionDigits: Math.abs(value) >= 100 ? 0 : 1
   });
 }
 
@@ -197,88 +207,150 @@ function SensibleHeatCalculator({ mass, specificHeat, deltaTemperature, sensible
       : 'La sustancia cede calor';
 
   return (
-    <div className="thermo-card">
-      <span className="eyebrow">CALORIMETRÍA / CALOR SENSIBLE</span>
-      <h2>Calcular Q = mcΔT</h2>
-      <p>Calcula la energía térmica necesaria para elevar o disminuir la temperatura de una sustancia sin cambiar su estado físico.</p>
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card">
+        <span className="eyebrow">CALORIMETRÍA / CALOR SENSIBLE</span>
+        <h2>Calcular Q = mcΔT</h2>
+        <p>Calcula la energía térmica necesaria para elevar o disminuir la temperatura de una sustancia sin cambiar su estado físico.</p>
 
-      <div className="temperature-input-grid sensible-heat-grid">
-        <label>
-          <span>Masa m</span>
-          <input type="number" step="any" value={mass} onChange={event => onMass(event.target.value)} />
-          <small>kg</small>
-        </label>
-        <label>
-          <span>Calor específico c</span>
-          <input type="number" step="any" value={specificHeat} onChange={event => onSpecificHeat(event.target.value)} />
-          <small>J/(kg·°C)</small>
-        </label>
-        <label>
-          <span>Variación ΔT</span>
-          <input type="number" step="any" value={deltaTemperature} onChange={event => onDeltaTemperature(event.target.value)} />
-          <small>°C o K</small>
-        </label>
-      </div>
+        <div className="temperature-input-grid sensible-heat-grid">
+          <label>
+            <span>Masa m</span>
+            <input type="number" step="any" value={mass} onChange={event => onMass(event.target.value)} />
+            <small>kg</small>
+          </label>
+          <label>
+            <span>Calor específico c</span>
+            <input type="number" step="any" value={specificHeat} onChange={event => onSpecificHeat(event.target.value)} />
+            <small>J/(kg·°C)</small>
+          </label>
+          <label>
+            <span>Variación ΔT</span>
+            <input type="number" step="any" value={deltaTemperature} onChange={event => onDeltaTemperature(event.target.value)} />
+            <small>°C o K</small>
+          </label>
+        </div>
 
-      <div className="temperature-results sensible-heat-result">
-        <article className="source">
-          <span>Calor Q</span>
-          <strong>{formatEnergy(sensibleHeat)}</strong>
-          <small>J</small>
-        </article>
-        <article>
-          <span>Equivalente</span>
-          <strong>{formatEnergy(sensibleHeat / 1000)}</strong>
-          <small>kJ</small>
-        </article>
-        <article>
-          <span>Interpretación</span>
-          <strong className="result-note">{heatSense}</strong>
-          <small>{Number(deltaTemperature) >= 0 ? 'ΔT positivo' : 'ΔT negativo'}</small>
-        </article>
+        <div className="temperature-results sensible-heat-result">
+          <article className="source">
+            <span>Calor Q</span>
+            <strong>{formatEnergy(sensibleHeat)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>Equivalente</span>
+            <strong>{formatEnergy(sensibleHeat / 1000)}</strong>
+            <small>kJ</small>
+          </article>
+          <article>
+            <span>Interpretación</span>
+            <strong className="result-note">{heatSense}</strong>
+            <small>{Number(deltaTemperature) >= 0 ? 'ΔT positivo' : 'ΔT negativo'}</small>
+          </article>
+        </div>
       </div>
+      <SensibleHeatTheoryCard />
     </div>
+  );
+}
+
+function SensibleHeatTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de calor sensible">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Calor específico y calorimetría</h3>
+      <p>El calor específico <code>c</code> de una sustancia es la capacidad térmica por unidad de masa. Por lo tanto, si a una muestra de una sustancia con masa <code>m</code> se le transfiere energía <code>Q</code> y la temperatura de la muestra cambia en <code>ΔT</code>, el calor específico de la sustancia es</p>
+
+      <div className="theory-equation" aria-label="c igual Q sobre m por delta T">
+        <span>c =</span>
+        <div>
+          <strong>Q</strong>
+          <i></i>
+          <strong>m ΔT</strong>
+        </div>
+      </div>
+
+      <p>A partir de esta definición, es factible relacionar la energía <code>Q</code> transferida entre una muestra de masa <code>m</code> de un material y sus alrededores con un cambio de temperatura <code>ΔT</code> como</p>
+      <code className="theory-main-formula">Q = m c ΔT</code>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.2: Calor específico y calorimetría.</small>
+      </footer>
+    </aside>
   );
 }
 
 function LatentHeatCalculator({ mass, latentHeat, totalHeat, onMass, onLatentHeat }) {
   return (
-    <div className="thermo-card">
-      <span className="eyebrow">CALORIMETRÍA / CALOR LATENTE</span>
-      <h2>Calcular Q = mL</h2>
-      <p>Calcula la energía necesaria para que una sustancia cambie de estado físico a temperatura constante.</p>
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card">
+        <span className="eyebrow">CALORIMETRÍA / CALOR LATENTE</span>
+        <h2>Calcular Q = mL</h2>
+        <p>Calcula la energía necesaria para que una sustancia cambie de estado físico a temperatura constante.</p>
 
-      <div className="temperature-input-grid latent-heat-grid">
-        <label>
-          <span>Masa m</span>
-          <input type="number" step="any" value={mass} onChange={event => onMass(event.target.value)} />
-          <small>kg</small>
-        </label>
-        <label>
-          <span>Calor latente L</span>
-          <input type="number" step="any" value={latentHeat} onChange={event => onLatentHeat(event.target.value)} />
-          <small>J/kg</small>
-        </label>
-      </div>
+        <div className="temperature-input-grid latent-heat-grid">
+          <label>
+            <span>Masa m</span>
+            <input type="number" step="any" value={mass} onChange={event => onMass(event.target.value)} />
+            <small>kg</small>
+          </label>
+          <label>
+            <span>Calor latente L</span>
+            <input type="number" step="any" value={latentHeat} onChange={event => onLatentHeat(event.target.value)} />
+            <small>J/kg</small>
+          </label>
+        </div>
 
-      <div className="temperature-results latent-heat-result">
-        <article className="source">
-          <span>Calor Q</span>
-          <strong>{formatEnergy(totalHeat)}</strong>
-          <small>J</small>
-        </article>
-        <article>
-          <span>Equivalente</span>
-          <strong>{formatEnergy(totalHeat / 1000)}</strong>
-          <small>kJ</small>
-        </article>
-        <article>
-          <span>Proceso</span>
-          <strong className="result-note">Cambio de fase a temperatura constante</strong>
-          <small>fusión, solidificación, vaporización o condensación</small>
-        </article>
+        <div className="temperature-results latent-heat-result">
+          <article className="source">
+            <span>Calor Q</span>
+            <strong>{formatEnergy(totalHeat)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>Equivalente</span>
+            <strong>{formatEnergy(totalHeat / 1000)}</strong>
+            <small>kJ</small>
+          </article>
+          <article>
+            <span>Proceso</span>
+            <strong className="result-note">Cambio de fase a temperatura constante</strong>
+            <small>fusión, solidificación, vaporización o condensación</small>
+          </article>
+        </div>
       </div>
+      <LatentHeatTheoryCard />
     </div>
+  );
+}
+
+function LatentHeatTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de calor latente">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Calor latente</h3>
+      <p>Si se requiere transferir una cantidad <code>Q</code> de energía para cambiar la fase de una masa <code>m</code> de una sustancia, el calor latente de la sustancia se define como</p>
+
+      <div className="theory-equation" aria-label="L igual Q sobre m">
+        <span>L =</span>
+        <div>
+          <strong>Q</strong>
+          <i></i>
+          <strong>m</strong>
+        </div>
+      </div>
+
+      <p>A partir de la definición de calor latente, y de nuevo al elegir el calor como el mecanismo de transferencia de energía, la energía requerida para cambiar la fase de una masa dada <code>m</code> de una sustancia pura es</p>
+      <code className="theory-main-formula">Q = ±mL</code>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.3: Calor latente.</small>
+      </footer>
+    </aside>
   );
 }
 
@@ -316,52 +388,75 @@ function ThermalEquilibriumCalculator({ substances, equilibrium, onSubstances })
   }
 
   return (
-    <div className="thermo-card equilibrium-card">
-      <span className="eyebrow">CALORIMETRÍA / EQUILIBRIO TÉRMICO</span>
-      <h2>Temperatura final de mezcla</h2>
-      <p>Resuelve mezclas térmicas en un calorímetro ideal: sistema aislado, sin pérdidas, donde la suma del calor cedido y absorbido es cero.</p>
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card equilibrium-card">
+        <span className="eyebrow">CALORIMETRÍA / EQUILIBRIO TÉRMICO</span>
+        <h2>Temperatura final de mezcla</h2>
+        <p>Resuelve mezclas térmicas en un calorímetro ideal: sistema aislado, sin pérdidas, donde la suma del calor cedido y absorbido es cero.</p>
 
-      <div className="equilibrium-table">
-        <div className="equilibrium-head">
-          <span>Sustancia</span>
-          <span>m kg</span>
-          <span>c J/(kg·°C)</span>
-          <span>T inicial °C</span>
-          <span>Qᵢ J</span>
-          <span></span>
-        </div>
-        {substances.map((item, index) => (
-          <div className="equilibrium-row" key={item.id}>
-            <input value={item.name} onChange={event => updateSubstance(item.id, { name: event.target.value })} />
-            <input type="number" step="any" value={item.mass} onChange={event => updateSubstance(item.id, { mass: event.target.value })} />
-            <input type="number" step="any" value={item.specificHeat} onChange={event => updateSubstance(item.id, { specificHeat: event.target.value })} />
-            <input type="number" step="any" value={item.temperature} onChange={event => updateSubstance(item.id, { temperature: event.target.value })} />
-            <strong>{formatEnergy(equilibrium.heats[index]?.heat)}</strong>
-            <button type="button" disabled={substances.length <= 2} onClick={() => removeSubstance(item.id)}>×</button>
+        <div className="equilibrium-table">
+          <div className="equilibrium-head">
+            <span>Sustancia</span>
+            <span>m kg</span>
+            <span>c J/(kg·°C)</span>
+            <span>T inicial °C</span>
+            <span>Qᵢ J</span>
+            <span></span>
           </div>
-        ))}
-      </div>
+          {substances.map((item, index) => (
+            <div className="equilibrium-row" key={item.id}>
+              <input value={item.name} onChange={event => updateSubstance(item.id, { name: event.target.value })} />
+              <input type="number" step="any" value={item.mass} onChange={event => updateSubstance(item.id, { mass: event.target.value })} />
+              <input type="number" step="any" value={item.specificHeat} onChange={event => updateSubstance(item.id, { specificHeat: event.target.value })} />
+              <input type="number" step="any" value={item.temperature} onChange={event => updateSubstance(item.id, { temperature: event.target.value })} />
+              <strong>{formatEnergy(equilibrium.heats[index]?.heat)}</strong>
+              <button type="button" disabled={substances.length <= 2} onClick={() => removeSubstance(item.id)}>×</button>
+            </div>
+          ))}
+        </div>
 
-      <button className="add-substance-button" type="button" onClick={addSubstance}>＋ Agregar sustancia</button>
+        <button className="add-substance-button" type="button" onClick={addSubstance}>＋ Agregar sustancia</button>
 
-      <div className="temperature-results equilibrium-result">
-        <article className="source">
-          <span>Temperatura final</span>
-          <strong>{formatEnergy(equilibrium.finalTemperature)}</strong>
-          <small>°C</small>
-        </article>
-        <article>
-          <span>Balance</span>
-          <strong>{formatEnergy(equilibrium.heats.reduce((sum, item) => sum + item.heat, 0))}</strong>
-          <small>J ≈ 0</small>
-        </article>
-        <article>
-          <span>Modelo</span>
-          <strong className="result-note">Calorímetro ideal</strong>
-          <small>sin pérdidas al entorno</small>
-        </article>
+        <div className="temperature-results equilibrium-result">
+          <article className="source">
+            <span>Temperatura final</span>
+            <strong>{formatEnergy(equilibrium.finalTemperature)}</strong>
+            <small>°C</small>
+          </article>
+          <article>
+            <span>Balance</span>
+            <strong>{formatEnergy(equilibrium.heats.reduce((sum, item) => sum + item.heat, 0))}</strong>
+            <small>J ≈ 0</small>
+          </article>
+          <article>
+            <span>Modelo</span>
+            <strong className="result-note">Calorímetro ideal</strong>
+            <small>sin pérdidas al entorno</small>
+          </article>
+        </div>
       </div>
+      <ThermalEquilibriumTheoryCard />
     </div>
+  );
+}
+
+function ThermalEquilibriumTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de calorimetría">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Calorimetría</h3>
+      <p>Una técnica para medir calor específico involucra el calentamiento de una muestra en alguna temperatura conocida <code>Tx</code>, al colocarla en un recipiente que contenga agua de masa conocida y temperatura <code>Tw &lt; Tx</code>, y medir la temperatura del agua después de que se logra el equilibrio.</p>
+      <p>Esta técnica se llama calorimetría, y los dispositivos donde se presenta esta transferencia de energía se llaman calorímetros.</p>
+      <p>Si el sistema de la muestra y el agua está aislado, el principio de conservación de energía requiere que la cantidad de energía que sale de la muestra (de calor específico desconocido) sea igual a la cantidad de energía que entra al agua.</p>
+      <p>La conservación de energía permite escribir la representación matemática de este enunciado energético como</p>
+      <code className="theory-main-formula">Q frío = -Q caliente</code>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.2: Calor específico y calorimetría.</small>
+      </footer>
+    </aside>
   );
 }
 
@@ -465,126 +560,270 @@ function HeatingCurveCalculator({ values, result, onValues }) {
       : 'Proceso de enfriamiento';
 
   return (
-    <div className="thermo-card equilibrium-card">
-      <span className="eyebrow">CALORIMETRÍA / CURVA DE CALENTAMIENTO</span>
-      <h2>Calor total por etapas</h2>
-      <p>Elegí los estados inicial y final. El simulador arma el recorrido completo y suma sólo las etapas de calor sensible y latente necesarias.</p>
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card equilibrium-card">
+        <span className="eyebrow">CALORIMETRÍA / CURVA DE CALENTAMIENTO</span>
+        <h2>Calor total por etapas</h2>
+        <p>Elegí los estados inicial y final. El simulador arma el recorrido completo y suma sólo las etapas de calor sensible y latente necesarias.</p>
 
-      <div className="phase-selector" aria-label="Tipo de transición">
-        <label>
-          <span>Estado inicial</span>
-          <select value={values.initialPhase} onChange={event => updatePhase('initialPhase', event.target.value)}>
-            {Object.entries(PHASES).map(([id, phase]) => <option key={id} value={id}>{phase.label}</option>)}
-          </select>
-        </label>
-        <span className="phase-arrow" aria-hidden="true">→</span>
-        <label>
-          <span>Estado final</span>
-          <select value={values.finalPhase} onChange={event => updatePhase('finalPhase', event.target.value)}>
-            {Object.entries(PHASES).map(([id, phase]) => <option key={id} value={id}>{phase.label}</option>)}
-          </select>
-        </label>
-        <div className="phase-process">
-          <span>Proceso</span>
-          <strong>{transitionLabel}</strong>
-        </div>
-      </div>
-
-      <div className="temperature-input-grid heating-curve-grid">
-        <label>
-          <span>Masa m</span>
-          <input type="number" step="any" value={values.mass} onChange={event => update({ mass: event.target.value })} />
-          <small>kg</small>
-        </label>
-        <label>
-          <span>T inicial</span>
-          <input type="number" step="any" value={values.initialTemperature} onChange={event => update({ initialTemperature: event.target.value })} />
-          <small>°C</small>
-        </label>
-        <label>
-          <span>T final</span>
-          <input type="number" step="any" value={values.finalTemperature} onChange={event => update({ finalTemperature: event.target.value })} />
-          <small>°C</small>
-        </label>
-        <label>
-          <span>Punto de fusión</span>
-          <input type="number" step="any" value={values.meltingPoint} onChange={event => update({ meltingPoint: event.target.value })} />
-          <small>°C</small>
-        </label>
-        <label>
-          <span>Punto de ebullición</span>
-          <input type="number" step="any" value={values.boilingPoint} onChange={event => update({ boilingPoint: event.target.value })} />
-          <small>°C</small>
-        </label>
-      </div>
-
-      <div className="temperature-input-grid heating-curve-grid material-constants-grid">
-        <label>
-          <span>c sólido</span>
-          <input type="number" step="any" value={values.solidSpecificHeat} onChange={event => update({ solidSpecificHeat: event.target.value })} />
-          <small>J/(kg·°C)</small>
-        </label>
-        <label>
-          <span>L fusión</span>
-          <input type="number" step="any" value={values.fusionLatentHeat} onChange={event => update({ fusionLatentHeat: event.target.value })} />
-          <small>J/kg</small>
-        </label>
-        <label>
-          <span>c líquido</span>
-          <input type="number" step="any" value={values.liquidSpecificHeat} onChange={event => update({ liquidSpecificHeat: event.target.value })} />
-          <small>J/(kg·°C)</small>
-        </label>
-        <label>
-          <span>L vaporización</span>
-          <input type="number" step="any" value={values.vaporizationLatentHeat} onChange={event => update({ vaporizationLatentHeat: event.target.value })} />
-          <small>J/kg</small>
-        </label>
-        <label>
-          <span>c vapor</span>
-          <input type="number" step="any" value={values.gasSpecificHeat} onChange={event => update({ gasSpecificHeat: event.target.value })} />
-          <small>J/(kg·°C)</small>
-        </label>
-      </div>
-
-      {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
-
-      <div className="stage-table">
-        <div className="stage-head">
-          <span>Etapa</span>
-          <span>Intervalo</span>
-          <span>Fórmula</span>
-          <span>Q J</span>
-        </div>
-        {result.stages.length ? result.stages.map((stage, index) => (
-          <div className="stage-row" key={`${stage.name}-${index}`}>
-            <strong>{stage.name}</strong>
-            <span>{stage.from === stage.to ? `${formatEnergy(stage.from)} °C` : `${formatEnergy(stage.from)} → ${formatEnergy(stage.to)} °C`}</span>
-            <code>{stage.formula}</code>
-            <b>{formatEnergy(stage.heat)}</b>
+        <div className="phase-selector" aria-label="Tipo de transición">
+          <label>
+            <span>Estado inicial</span>
+            <select value={values.initialPhase} onChange={event => updatePhase('initialPhase', event.target.value)}>
+              {Object.entries(PHASES).map(([id, phase]) => <option key={id} value={id}>{phase.label}</option>)}
+            </select>
+          </label>
+          <span className="phase-arrow" aria-hidden="true">→</span>
+          <label>
+            <span>Estado final</span>
+            <select value={values.finalPhase} onChange={event => updatePhase('finalPhase', event.target.value)}>
+              {Object.entries(PHASES).map(([id, phase]) => <option key={id} value={id}>{phase.label}</option>)}
+            </select>
+          </label>
+          <div className="phase-process">
+            <span>Proceso</span>
+            <strong>{transitionLabel}</strong>
           </div>
-        )) : (
-          <div className="stage-row empty-stage"><strong>Sin etapas</strong><span>{result.error ? 'Revisá las entradas' : 'No hay cambio térmico'}</span><code>—</code><b>—</b></div>
-        )}
-      </div>
+        </div>
 
-      <div className="temperature-results equilibrium-result">
-        <article className="source">
-          <span>Calor total</span>
-          <strong>{formatEnergy(result.total)}</strong>
-          <small>J</small>
-        </article>
-        <article>
-          <span>Equivalente</span>
-          <strong>{formatEnergy(result.total / 1000)}</strong>
-          <small>kJ</small>
-        </article>
-        <article>
-          <span>Interpretación</span>
-          <strong className="result-note">{totalSense}</strong>
-          <small>Σ de todas las etapas</small>
-        </article>
+        <div className="temperature-input-grid heating-curve-grid">
+          <label>
+            <span>Masa m</span>
+            <input type="number" step="any" value={values.mass} onChange={event => update({ mass: event.target.value })} />
+            <small>kg</small>
+          </label>
+          <label>
+            <span>T inicial</span>
+            <input type="number" step="any" value={values.initialTemperature} onChange={event => update({ initialTemperature: event.target.value })} />
+            <small>°C</small>
+          </label>
+          <label>
+            <span>T final</span>
+            <input type="number" step="any" value={values.finalTemperature} onChange={event => update({ finalTemperature: event.target.value })} />
+            <small>°C</small>
+          </label>
+          <label>
+            <span>Punto de fusión</span>
+            <input type="number" step="any" value={values.meltingPoint} onChange={event => update({ meltingPoint: event.target.value })} />
+            <small>°C</small>
+          </label>
+          <label>
+            <span>Punto de ebullición</span>
+            <input type="number" step="any" value={values.boilingPoint} onChange={event => update({ boilingPoint: event.target.value })} />
+            <small>°C</small>
+          </label>
+        </div>
+
+        <div className="temperature-input-grid heating-curve-grid material-constants-grid">
+          <label>
+            <span>c sólido</span>
+            <input type="number" step="any" value={values.solidSpecificHeat} onChange={event => update({ solidSpecificHeat: event.target.value })} />
+            <small>J/(kg·°C)</small>
+          </label>
+          <label>
+            <span>L fusión</span>
+            <input type="number" step="any" value={values.fusionLatentHeat} onChange={event => update({ fusionLatentHeat: event.target.value })} />
+            <small>J/kg</small>
+          </label>
+          <label>
+            <span>c líquido</span>
+            <input type="number" step="any" value={values.liquidSpecificHeat} onChange={event => update({ liquidSpecificHeat: event.target.value })} />
+            <small>J/(kg·°C)</small>
+          </label>
+          <label>
+            <span>L vaporización</span>
+            <input type="number" step="any" value={values.vaporizationLatentHeat} onChange={event => update({ vaporizationLatentHeat: event.target.value })} />
+            <small>J/kg</small>
+          </label>
+          <label>
+            <span>c vapor</span>
+            <input type="number" step="any" value={values.gasSpecificHeat} onChange={event => update({ gasSpecificHeat: event.target.value })} />
+            <small>J/(kg·°C)</small>
+          </label>
+        </div>
+
+        {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+        <HeatingCurveGraph values={values} result={result} />
+
+        <div className="stage-table">
+          <div className="stage-head">
+            <span>Etapa</span>
+            <span>Intervalo</span>
+            <span>Fórmula</span>
+            <span>Q J</span>
+          </div>
+          {result.stages.length ? result.stages.map((stage, index) => (
+            <div className="stage-row" key={`${stage.name}-${index}`}>
+              <strong>{stage.name}</strong>
+              <span>{stage.from === stage.to ? `${formatEnergy(stage.from)} °C` : `${formatEnergy(stage.from)} → ${formatEnergy(stage.to)} °C`}</span>
+              <code>{stage.formula}</code>
+              <b>{formatEnergy(stage.heat)}</b>
+            </div>
+          )) : (
+            <div className="stage-row empty-stage"><strong>Sin etapas</strong><span>{result.error ? 'Revisá las entradas' : 'No hay cambio térmico'}</span><code>—</code><b>—</b></div>
+          )}
+        </div>
+
+        <div className="temperature-results equilibrium-result">
+          <article className="source">
+            <span>Calor total</span>
+            <strong>{formatEnergy(result.total)}</strong>
+            <small>J</small>
+          </article>
+          <article>
+            <span>Equivalente</span>
+            <strong>{formatEnergy(result.total / 1000)}</strong>
+            <small>kJ</small>
+          </article>
+          <article>
+            <span>Interpretación</span>
+            <strong className="result-note">{totalSense}</strong>
+            <small>Σ de todas las etapas</small>
+          </article>
+        </div>
       </div>
+      <HeatingCurveTheoryCard />
     </div>
+  );
+}
+
+function HeatingCurveGraph({ values, result }) {
+  const ti = Number(values.initialTemperature);
+  const tm = Number(values.meltingPoint);
+  const tb = Number(values.boilingPoint);
+  const tf = Number(values.finalTemperature);
+  const temperatures = [ti, tm, tb, tf, ...result.stages.flatMap(stage => [stage.from, stage.to])].filter(Number.isFinite);
+  const minTemperature = Math.min(...temperatures);
+  const maxTemperature = Math.max(...temperatures);
+  const temperatureRange = Math.max(maxTemperature - minTemperature, 1);
+  const points = [{ q: 0, temperature: ti }];
+
+  result.stages.forEach(stage => {
+    const previousQ = points[points.length - 1].q;
+    points.push({ q: previousQ + stage.heat, temperature: stage.to });
+  });
+
+  const qValues = points.map(point => point.q);
+  const minQ = Math.min(...qValues, 0);
+  const maxQ = Math.max(...qValues, 1);
+  const qRange = Math.max(maxQ - minQ, 1);
+  const width = 760;
+  const height = 300;
+  const padding = { left: 58, right: 22, top: 22, bottom: 46 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const x = (q) => padding.left + ((q - minQ) / qRange) * plotWidth;
+  const y = (temperature) => padding.top + ((maxTemperature - temperature) / temperatureRange) * plotHeight;
+  const linePoints = points.map(point => `${x(point.q)},${y(point.temperature)}`).join(' ');
+  const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const visiblePointIndexes = points
+    .map((_, index) => index)
+    .filter((index) => index === 0 || index === points.length - 1 || result.stages[index - 1]?.from === result.stages[index - 1]?.to);
+  const xTickIndexes = points
+    .map((_, index) => index)
+    .filter((index) => index === 0 || index === points.length - 1);
+  const yTickValues = [minTemperature, tm, tb, maxTemperature]
+    .filter((value, index, list) => Number.isFinite(value) && list.indexOf(value) === index);
+
+  const stageRegions = result.stages.map((stage, index) => {
+    const startQ = points[index].q;
+    const endQ = points[index + 1].q;
+    const left = Math.min(x(startQ), x(endQ));
+    const regionWidth = Math.max(Math.abs(x(endQ) - x(startQ)), 2);
+    const isLatent = stage.from === stage.to;
+
+    return (
+      <rect
+        key={`${stage.name}-${index}`}
+        className={isLatent ? 'latent-region' : 'sensible-region'}
+        x={left}
+        y={padding.top}
+        width={regionWidth}
+        height={plotHeight}
+      />
+    );
+  });
+
+  return (
+    <div className="heating-graph-card" aria-label="Gráfico de curva de calentamiento">
+      <div className="heating-graph-head">
+        <span>Curva de calentamiento</span>
+        <small>Energía acumulada vs temperatura</small>
+      </div>
+      {result.stages.length ? (
+        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Temperatura en función de la energía agregada">
+          <g className="curve-regions">{stageRegions}</g>
+          <line className="graph-axis" x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + plotHeight} />
+          <line className="graph-axis" x1={padding.left} y1={padding.top + plotHeight} x2={padding.left + plotWidth} y2={padding.top + plotHeight} />
+          {yTickValues.map(value => (
+            <g key={value}>
+              <line className="graph-guide" x1={padding.left} x2={padding.left + plotWidth} y1={y(value)} y2={y(value)} />
+              <text className="graph-tick" x={padding.left - 8} y={y(value) + 3} textAnchor="end">{formatCompactEnergy(value)}</text>
+            </g>
+          ))}
+          {xTickIndexes.map((index) => {
+            const point = points[index];
+            const labelX = x(point.q);
+            const isFirst = index === 0;
+            const isLast = index === points.length - 1;
+
+            return (
+              <g key={`${point.q}-${index}-tick`}>
+                <line className="graph-tick-line" x1={labelX} x2={labelX} y1={padding.top + plotHeight} y2={padding.top + plotHeight + 7} />
+                <text className="graph-tick" x={labelX} y={padding.top + plotHeight + 22} textAnchor={isFirst ? 'start' : isLast ? 'end' : 'middle'}>{formatCompactEnergy(point.q)}</text>
+              </g>
+            );
+          })}
+          {visiblePointIndexes.map((index) => {
+            const point = points[index];
+            const pointX = x(point.q);
+            const pointY = y(point.temperature);
+            const isLeftEdge = pointX < padding.left + 24;
+            const isRightEdge = pointX > padding.left + plotWidth - 24;
+
+            return (
+              <text
+                key={`${point.q}-${index}-label`}
+                className="graph-point-label"
+                x={isLeftEdge ? pointX + 8 : isRightEdge ? pointX - 8 : pointX}
+                y={Math.max(pointY - 10, padding.top + 10)}
+                textAnchor={isLeftEdge ? 'start' : isRightEdge ? 'end' : 'middle'}
+              >
+                {labels[index] ?? index + 1}
+              </text>
+            );
+          })}
+          {points.map((point, index) => (
+            <g key={`${point.q}-${index}`}>
+              <circle className="curve-dot" cx={x(point.q)} cy={y(point.temperature)} r="3.5" />
+            </g>
+          ))}
+          <polyline className="heating-curve-line" points={linePoints} />
+          <text className="graph-axis-label" x={padding.left + 4} y={13}>T (°C)</text>
+          <text className="graph-axis-label" x={padding.left + plotWidth - 112} y={height - 8}>Energía agregada (J)</text>
+        </svg>
+      ) : (
+        <div className="heating-graph-empty">El gráfico aparece cuando las entradas definen una transición válida.</div>
+      )}
+    </div>
+  );
+}
+
+function HeatingCurveTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría de curva de calentamiento">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Curva de calentamiento</h3>
+      <p>Para entender el papel del calor latente en los cambios de fase, considere la energía requerida para convertir un cubo de hielo de 1.00 g de −30.0 °C a vapor a 120.0 °C. La figura 20.2 indica los resultados experimentales obtenidos cuando al cubo se le agrega gradualmente energía.</p>
+      <p>La cantidad total de energía que se debe agregar... es la suma de los resultados de las cinco partes de la curva.</p>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.3: Calor latente. Figura 20.2.</small>
+      </footer>
+    </aside>
   );
 }
 
@@ -636,21 +875,20 @@ function SensibleHeatFormulas() {
       <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Calor sensible sin cambio de estado físico</small></div>
       <div className="formula-grid">
         <article>
-          <h3>Calor sensible</h3>
-          <p><code>Q = m c ΔT</code></p>
-          <p><code>ΔT = T_final − T_inicial</code></p>
+          <h3>Calor específico</h3>
+          <p><code>c = Q / m ΔT</code></p>
+          <p>Capacidad térmica por unidad de masa.</p>
         </article>
         <article>
-          <h3>Unidades</h3>
+          <h3>Energía transferida</h3>
+          <p><code>Q = m c ΔT</code></p>
+          <p>Relación entre la energía transferida y el cambio de temperatura.</p>
+        </article>
+        <article>
+          <h3>Cambio de temperatura</h3>
+          <p><code>ΔT = T_final − T_inicial</code></p>
           <p><code>m</code>: masa en <code>kg</code></p>
           <p><code>c</code>: calor específico en <code>J/(kg·°C)</code> o <code>J/(kg·K)</code></p>
-          <p><code>ΔT</code>: variación de temperatura en <code>°C</code> o <code>K</code></p>
-        </article>
-        <article>
-          <h3>Interpretación del signo</h3>
-          <p><code>Q &gt; 0</code>: el cuerpo absorbe calor.</p>
-          <p><code>Q &lt; 0</code>: el cuerpo cede calor.</p>
-          <p><code>Q = 0</code>: no hay cambio térmico neto.</p>
         </article>
       </div>
     </section>
@@ -664,20 +902,19 @@ function LatentHeatFormulas() {
       <div className="formula-grid">
         <article>
           <h3>Calor latente</h3>
-          <p><code>Q = m L</code></p>
+          <p><code>L = Q / m</code></p>
+          <p>Energía transferida por unidad de masa durante el cambio de fase.</p>
+        </article>
+        <article>
+          <h3>Energía requerida</h3>
+          <p><code>Q = ±mL</code></p>
           <p>Se usa cuando la temperatura permanece constante y cambia el estado físico.</p>
         </article>
         <article>
-          <h3>Unidades</h3>
+          <h3>Variables</h3>
           <p><code>m</code>: masa en <code>kg</code></p>
           <p><code>L</code>: calor latente en <code>J/kg</code></p>
           <p><code>Q</code>: energía térmica en <code>J</code></p>
-        </article>
-        <article>
-          <h3>Tipos comunes</h3>
-          <p><code>L_f</code>: calor latente de fusión.</p>
-          <p><code>L_v</code>: calor latente de vaporización.</p>
-          <p>El valor de <code>L</code> depende de la sustancia y del cambio de fase.</p>
         </article>
       </div>
     </section>
@@ -690,20 +927,19 @@ function ThermalEquilibriumFormulas() {
       <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Mezcla térmica en calorímetro ideal</small></div>
       <div className="formula-grid">
         <article>
-          <h3>Balance térmico</h3>
-          <p><code>Σ Qᵢ = 0</code></p>
+          <h3>Conservación de energía</h3>
+          <p><code>Q frío = -Q caliente</code></p>
+          <p>La energía que sale de la muestra es igual a la energía que entra al agua.</p>
+        </article>
+        <article>
+          <h3>Calor sensible</h3>
           <p><code>Q = m c ΔT</code></p>
+          <p>Se aplica a cada cuerpo mientras no cambia de fase.</p>
         </article>
         <article>
-          <h3>Temperatura final</h3>
-          <p><code>Σ mᵢ cᵢ (T_f − Tᵢ) = 0</code></p>
-          <p><code>T_f = (Σ mᵢ cᵢ Tᵢ) / (Σ mᵢ cᵢ)</code></p>
-        </article>
-        <article>
-          <h3>Supuestos</h3>
+          <h3>Sistema aislado</h3>
           <p>El sistema está aislado.</p>
-          <p>No hay cambio de fase.</p>
-          <p>El calorímetro no absorbe calor o su capacidad térmica se desprecia.</p>
+          <p>La transferencia de energía ocurre entre la muestra y el agua.</p>
         </article>
       </div>
     </section>
