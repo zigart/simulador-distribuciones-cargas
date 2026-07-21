@@ -32,6 +32,7 @@ export default function App() {
   const [showMotion, setShowMotion] = useState(true);
   const [graphZoom, setGraphZoom] = useState(1);
   const [radius, setRadiusState] = useState(4);
+  const [radiusInput, setRadiusInput] = useState('4');
   const [contributionsCollapsed, setContributionsCollapsed] = useState(false);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState('');
@@ -39,7 +40,7 @@ export default function App() {
   const normalizedRegions = useMemo(() => normalizeRegions(regions, geometry), [regions, geometry]);
   const selected = normalizedRegions.find(region => region.id === selectedId) || null;
   const point = useMemo(() => ({ x: radius, y: 0, z: 0 }), [radius]);
-  const state = { geometry, regions: normalizedRegions, selectedId, chargeMode, chargeUnit, view, showLabels, showMotion, graphZoom, radius, point };
+  const state = { geometry, regions: normalizedRegions, selectedId, chargeMode, chargeUnit, view, showLabels, showMotion, graphZoom, radius, radiusInput, point };
 
   function showToast(message) {
     setToast(message);
@@ -102,6 +103,7 @@ export default function App() {
         setRegions(defaultRegionsFor(nextGeometry));
         setSelectedId(null);
         setRadiusState(4);
+        setRadiusInput('4');
         setView(nextGeometry === 'sphere' ? view : 'model');
         setModal(null);
       }
@@ -144,7 +146,19 @@ export default function App() {
 
   function resetView() {
     setRadiusState(4);
+    setRadiusInput('4');
     setGraphZoom(1);
+  }
+
+  function updateRadiusInput(value) {
+    setRadiusInput(value);
+    if (value.trim() === '') return;
+    const next = Number(value);
+    if (Number.isFinite(next) && next >= 0) setRadiusState(next);
+  }
+
+  function commitRadiusInput() {
+    setRadiusInput(String(radius));
   }
 
   return (
@@ -212,7 +226,8 @@ export default function App() {
             </main>
             <ResultsPanel
               state={state}
-              onRadius={value => setRadiusState(Math.max(0, Number(value) || 0))}
+              onRadius={updateRadiusInput}
+              onRadiusCommit={commitRadiusInput}
               contributionsCollapsed={contributionsCollapsed}
               onToggleContributions={() => setContributionsCollapsed(value => !value)}
             />

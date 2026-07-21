@@ -1,7 +1,7 @@
 import { calculateField, locatePoint } from '../physics/calculations.js';
 import { sci } from '../physics/format.js';
 
-export default function ResultsPanel({ state, onRadius, contributionsCollapsed, onToggleContributions }) {
+export default function ResultsPanel({ state, onRadius, onRadiusCommit, contributionsCollapsed, onToggleContributions }) {
   const { rows, total } = calculateField(state.geometry, state.regions, state.point);
   const radial = total.x;
   const mag = Math.abs(radial);
@@ -15,7 +15,7 @@ export default function ResultsPanel({ state, onRadius, contributionsCollapsed, 
       </div>
       <div className="test-point">
         <div><span className="eyebrow">RADIO DE CÁLCULO</span><small>Distancia al centro o eje en metros</small></div>
-        <label>r <input type="number" value={state.radius} min="0" step="0.01" onChange={e => onRadius(e.target.value)} /></label>
+        <label>r <input type="number" value={state.radiusInput} min="0" step="0.01" onChange={e => onRadius(e.target.value)} onBlur={onRadiusCommit} /></label>
       </div>
       <div className={`contributions ${contributionsCollapsed ? 'collapsed' : ''}`}>
         <button onClick={onToggleContributions}><span>APORTES POR REGIÓN</span><b>⌃</b></button>
