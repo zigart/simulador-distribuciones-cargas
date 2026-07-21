@@ -170,6 +170,9 @@ button:disabled, input:disabled, select:disabled { opacity: .48; cursor: not-all
 .theory-card footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #edf0ee; }
 .theory-card footer span, .theory-card footer small { display: block; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
 .theory-card footer strong { display: block; margin: 6px 0 5px; color: var(--ink); font-size: 11px; line-height: 1.35; }
+.mode-toggle { display: inline-grid; grid-template-columns: repeat(2, minmax(110px, 1fr)); gap: 4px; margin-top: 22px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: #eef1ee; }
+.mode-toggle button { border: 0; border-radius: 6px; background: transparent; padding: 9px 12px; color: var(--muted); cursor: pointer; font-size: 10px; font-weight: 800; }
+.mode-toggle button.active { background: white; color: var(--ink); box-shadow: 0 1px 4px rgba(30,40,38,.1); }
 .temperature-input-grid { display: grid; grid-template-columns: minmax(180px, 260px) minmax(220px, 300px); gap: 14px; margin-top: 26px; }
 .temperature-input-grid label span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
 .temperature-input-grid input, .temperature-input-grid select { width: 100%; border: 1px solid var(--line); border-radius: 9px; background: white; padding: 12px; outline: 0; font: 12px 'DM Mono', monospace; }

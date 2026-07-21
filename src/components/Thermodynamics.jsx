@@ -26,6 +26,11 @@ const CALCULATORS = [
     id: 'heating-curve',
     title: 'Curva de calentamiento',
     description: 'ΣQ por etapas'
+  },
+  {
+    id: 'mechanical-equivalent',
+    title: 'Equivalente mecánico',
+    description: '1 cal = 4.186 J'
   }
 ];
 
@@ -59,6 +64,13 @@ export default function Thermodynamics() {
   const [calculator, setCalculator] = useState('temperature');
   const [temperature, setTemperature] = useState(25);
   const [sourceScale, setSourceScale] = useState('celsius');
+  const [mechanical, setMechanical] = useState({
+    mode: 'velocity',
+    mass: 1,
+    velocity: 10,
+    height: 5,
+    specificHeat: 4186
+  });
   const [mass, setMass] = useState(1);
   const [specificHeat, setSpecificHeat] = useState(4186);
   const [deltaTemperature, setDeltaTemperature] = useState(10);
@@ -83,6 +95,7 @@ export default function Thermodynamics() {
     vaporizationLatentHeat: 2256000
   });
   const results = useMemo(() => convertTemperature(temperature, sourceScale), [temperature, sourceScale]);
+  const mechanicalResult = useMemo(() => calculateMechanicalEquivalent(mechanical), [mechanical]);
   const sensibleHeat = useMemo(() => Number(mass) * Number(specificHeat) * Number(deltaTemperature), [mass, specificHeat, deltaTemperature]);
   const latentHeatTotal = useMemo(() => Number(latentMass) * Number(latentHeat), [latentMass, latentHeat]);
   const equilibrium = useMemo(() => calculateThermalEquilibrium(mixture), [mixture]);
@@ -116,6 +129,12 @@ export default function Thermodynamics() {
               results={results}
               onTemperature={setTemperature}
               onSourceScale={setSourceScale}
+            />
+          ) : calculator === 'mechanical-equivalent' ? (
+            <MechanicalEquivalentCalculator
+              values={mechanical}
+              result={mechanicalResult}
+              onValues={setMechanical}
             />
           ) : calculator === 'sensible-heat' ? (
             <SensibleHeatCalculator
@@ -154,13 +173,15 @@ export default function Thermodynamics() {
       <section className="results-drawer thermo-formulas">
         {calculator === 'temperature'
           ? <TemperatureFormulas />
-          : calculator === 'sensible-heat'
-            ? <SensibleHeatFormulas />
-            : calculator === 'latent-heat'
-              ? <LatentHeatFormulas />
-              : calculator === 'thermal-equilibrium'
-                ? <ThermalEquilibriumFormulas />
-                : <HeatingCurveFormulas />}
+          : calculator === 'mechanical-equivalent'
+            ? <MechanicalEquivalentFormulas />
+            : calculator === 'sensible-heat'
+              ? <SensibleHeatFormulas />
+              : calculator === 'latent-heat'
+                ? <LatentHeatFormulas />
+                : calculator === 'thermal-equilibrium'
+                  ? <ThermalEquilibriumFormulas />
+                  : <HeatingCurveFormulas />}
       </section>
     </>
   );
@@ -196,6 +217,121 @@ function TemperatureConverter({ temperature, sourceScale, results, onTemperature
         ))}
       </div>
     </div>
+  );
+}
+
+function calculateMechanicalEquivalent(values) {
+  const mass = Number(values.mass);
+  const velocity = Number(values.velocity);
+  const height = Number(values.height);
+  const specificHeat = Number(values.specificHeat);
+  const gravity = 9.81;
+  const sourceValue = values.mode === 'height' ? height : velocity;
+
+  if (![mass, sourceValue, specificHeat].every(Number.isFinite)) {
+    return { energy: NaN, calories: NaN, deltaTemperature: NaN, error: 'Completá todos los campos con valores numéricos.' };
+  }
+  if (mass <= 0 || specificHeat <= 0 || sourceValue < 0) {
+    return { energy: NaN, calories: NaN, deltaTemperature: NaN, error: 'La masa y el calor específico deben ser positivos; la velocidad o altura no puede ser negativa.' };
+  }
+
+  const energy = values.mode === 'height'
+    ? mass * gravity * height
+    : 0.5 * mass * velocity ** 2;
+
+  return {
+    energy,
+    calories: energy / 4.186,
+    deltaTemperature: energy / (mass * specificHeat),
+    error: null
+  };
+}
+
+function MechanicalEquivalentCalculator({ values, result, onValues }) {
+  const update = (patch) => onValues(current => ({ ...current, ...patch }));
+  const sourceLabel = values.mode === 'height' ? 'Energía potencial' : 'Energía cinética';
+  const sourceFormula = values.mode === 'height' ? 'E = mgh' : 'E = 1/2 mv²';
+
+  return (
+    <div className="thermo-content-with-theory">
+      <div className="thermo-card">
+        <span className="eyebrow">CALOR Y ENERGÍA INTERNA</span>
+        <h2>Equivalente mecánico del calor</h2>
+        <p>Calcula el aumento de temperatura cuando una energía mecánica se transforma íntegramente en calor.</p>
+
+        <div className="mode-toggle" role="group" aria-label="Origen de energía mecánica">
+          <button type="button" className={values.mode === 'velocity' ? 'active' : ''} onClick={() => update({ mode: 'velocity' })}>Velocidad</button>
+          <button type="button" className={values.mode === 'height' ? 'active' : ''} onClick={() => update({ mode: 'height' })}>Altura</button>
+        </div>
+
+        <div className="temperature-input-grid sensible-heat-grid">
+          <label>
+            <span>Masa m</span>
+            <input type="number" step="any" value={values.mass} onChange={event => update({ mass: event.target.value })} />
+            <small>kg</small>
+          </label>
+          {values.mode === 'height' ? (
+            <label>
+              <span>Altura h</span>
+              <input type="number" step="any" value={values.height} onChange={event => update({ height: event.target.value })} />
+              <small>m</small>
+            </label>
+          ) : (
+            <label>
+              <span>Velocidad v</span>
+              <input type="number" step="any" value={values.velocity} onChange={event => update({ velocity: event.target.value })} />
+              <small>m/s</small>
+            </label>
+          )}
+          <label>
+            <span>Calor específico c</span>
+            <input type="number" step="any" value={values.specificHeat} onChange={event => update({ specificHeat: event.target.value })} />
+            <small>J/(kg·°C)</small>
+          </label>
+        </div>
+
+        {result.error && <div className="heating-curve-error" role="alert">{result.error}</div>}
+
+        <div className="temperature-results sensible-heat-result">
+          <article className="source">
+            <span>Aumento ΔT</span>
+            <strong>{formatEnergy(result.deltaTemperature)}</strong>
+            <small>°C</small>
+          </article>
+          <article>
+            <span>{sourceLabel}</span>
+            <strong>{formatEnergy(result.energy)}</strong>
+            <small>J · {sourceFormula}</small>
+          </article>
+          <article>
+            <span>Equivalente</span>
+            <strong>{formatEnergy(result.calories)}</strong>
+            <small>cal</small>
+          </article>
+        </div>
+      </div>
+      <MechanicalEquivalentTheoryCard />
+    </div>
+  );
+}
+
+function MechanicalEquivalentTheoryCard() {
+  return (
+    <aside className="theory-card" aria-label="Teoría del equivalente mecánico del calor">
+      <span className="eyebrow">TEORÍA</span>
+      <h3>Equivalente mecánico del calor</h3>
+      <p>"Joule encontró que la pérdida en energía mecánica es proporcional al producto de la masa del agua y el aumento en la temperatura del agua. La constante de proporcionalidad que encontró era de aproximadamente 4.18 J/g °C. Por lo tanto, 4.18 J de energía mecánica elevan la temperatura de 1 g de agua en 1°C. Mediciones más precisas tomadas más tarde demostraron que la proporcionalidad era de 4.186 J/g °C cuando la temperatura del agua se elevaba de 14.5°C a 15.5°C. Aquí se adopta este valor de “caloría de 15 grados”:</p>
+      <code className="theory-main-formula">1 cal = 4.186 J</code>
+      <p>Esta igualdad se conoce, por razones meramente históricas, como el equivalente mecánico del calor."</p>
+
+      <code className="theory-main-formula">E mecánica = Q = m c ΔT</code>
+
+      <footer>
+        <span>Referencia</span>
+        <strong>Serway y Jewett, Física para ciencias e ingeniería, Volumen 1, 7.ª edición.</strong>
+        <small>Capítulo 20, Sección 20.1: Calor y energía interna.</small>
+      </footer>
+    </aside>
   );
 }
 
@@ -863,6 +999,31 @@ function TemperatureFormulas() {
           <h3>Desde Fahrenheit</h3>
           <p><code>°C = (°F − 32) × 5/9</code></p>
           <p><code>K = ((°F − 32) × 5/9) + 273.15</code></p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function MechanicalEquivalentFormulas() {
+  return (
+    <section className="formula-panel" aria-label="Fórmulas utilizadas">
+      <div className="formula-title"><span className="eyebrow">FÓRMULAS UTILIZADAS</span><small>Conservación de energía y equivalente mecánico del calor</small></div>
+      <div className="formula-grid">
+        <article>
+          <h3>Equivalente mecánico</h3>
+          <p><code>1 cal = 4.186 J</code></p>
+          <p>Relación histórica entre caloría y joule.</p>
+        </article>
+        <article>
+          <h3>Energía mecánica</h3>
+          <p><code>E_c = 1/2 m v²</code></p>
+          <p><code>E_p = m g h</code></p>
+        </article>
+        <article>
+          <h3>Aumento de temperatura</h3>
+          <p><code>E mecánica = Q = m c ΔT</code></p>
+          <p><code>ΔT = Q / m c</code></p>
         </article>
       </div>
     </section>
