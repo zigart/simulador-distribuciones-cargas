@@ -1223,6 +1223,8 @@ function ThermalEquilibriumTheoryCard() {
       <p>Si el sistema de la muestra y el agua está aislado, el principio de conservación de energía requiere que la cantidad de energía que sale de la muestra (de calor específico desconocido) sea igual a la cantidad de energía que entra al agua.</p>
       <p>La conservación de energía permite escribir la representación matemática de este enunciado energético como</p>
       <code className="theory-main-formula">Q frío = -Q caliente</code>
+      <p>Para una mezcla de sustancias sin cambio de fase, la temperatura final de equilibrio se obtiene ponderando cada temperatura inicial por su masa y calor específico:</p>
+      <code className="theory-main-formula">T<sub>f</sub> = Σ(m<sub>i</sub>c<sub>i</sub>T<sub>i</sub>) / Σ(m<sub>i</sub>c<sub>i</sub>)</code>
 
       <footer>
         <span>Referencia</span>
@@ -1855,9 +1857,9 @@ function ThermalEquilibriumFormulas() {
           <p>Se aplica a cada cuerpo mientras no cambia de fase.</p>
         </article>
         <article>
-          <h3>Sistema aislado</h3>
-          <p>El sistema está aislado.</p>
-          <p>La transferencia de energía ocurre entre la muestra y el agua.</p>
+          <h3>Temperatura final</h3>
+          <p><code>T<sub>f</sub> = Σ(m<sub>i</sub>c<sub>i</sub>T<sub>i</sub>) / Σ(m<sub>i</sub>c<sub>i</sub>)</code></p>
+          <p>Promedio ponderado por la capacidad térmica de cada sustancia.</p>
         </article>
       </div>
     </section>
